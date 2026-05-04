@@ -9,7 +9,7 @@ echo ""
 # Start Backend
 echo "Starting Laravel backend on port 8000..."
 cd backend
-php artisan serve &
+php -d upload_max_filesize=200M -d post_max_size=220M -d memory_limit=1024M -d max_execution_time=300 -d max_input_time=300 -S 127.0.0.1:8000 -t public public/index.php &
 BACKEND_PID=$!
 
 cd ..

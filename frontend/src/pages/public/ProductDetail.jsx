@@ -37,7 +37,7 @@ export default function ProductDetail() {
   return (
     <div className="mesh-bg">
       <div className="mx-auto max-w-6xl px-4 py-16">
-        <Link to="/products" className="text-sm uppercase tracking-[0.3em] text-slate-500">
+        <Link to="/products" className="pill inline-flex">
           {t.backToProducts[language]}
         </Link>
 

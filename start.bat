@@ -7,7 +7,7 @@ echo.
 
 REM Start Backend
 echo Starting Laravel backend on port 8000...
-start cmd /k "cd backend && php artisan serve"
+start cmd /k "cd backend && php -d upload_max_filesize=200M -d post_max_size=220M -d memory_limit=1024M -d max_execution_time=300 -d max_input_time=300 -S 127.0.0.1:8000 -t public public/index.php"
 
 REM Wait a moment for backend to start
 timeout /t 3 /nobreak
