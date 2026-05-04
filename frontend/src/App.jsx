@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
@@ -8,21 +8,13 @@ import ProductDetail from './pages/public/ProductDetail';
 import AdminLogin from './pages/admin/AdminLogin';
 import Dashboard from './pages/admin/Dashboard';
 import ManageProducts from './pages/admin/ManageProducts';
+import ManageCategories from './pages/admin/ManageCategories';
+import ManageUsers from './pages/admin/ManageUsers';
+import ManageTranslations from './pages/admin/ManageTranslations';
 import ProtectedRoute from './components/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
 
 export default function App() {
-  const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem('auth_token'));
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setIsAdmin(!!localStorage.getItem('auth_token'));
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
   return (
     <LanguageProvider>
       <Router>
@@ -40,6 +32,9 @@ export default function App() {
           <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="products" element={<ManageProducts />} />
+            <Route path="categories" element={<ManageCategories />} />
+            <Route path="users" element={<ManageUsers />} />
+            <Route path="translations" element={<ManageTranslations />} />
           </Route>
 
           {/* 404 */}

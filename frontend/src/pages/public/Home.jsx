@@ -17,7 +17,7 @@ export default function Home() {
     <div className="mesh-bg">
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-2">
         <div className="reveal">
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t.tagline[language]}</p>
+          <span className="pill">{t.tagline[language]}</span>
           <h1 className="mt-6 text-5xl font-semibold leading-tight md:text-6xl">
             {t.heroTitle[language]}
             <span className="block text-[var(--ember)]">{t.heroTitleSpan[language]}</span>

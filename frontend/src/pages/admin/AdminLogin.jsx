@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
+import logo from '../../assets/logo.png';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function AdminLogin() {
 
   return (
     <div className="mesh-bg flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="glass-card w-full max-w-md rounded-3xl p-8">
+      <div className="glass-card w-full max-w-md rounded-3xl p-10 page-fade">
 
         {/* Language Toggle */}
         <div className="flex justify-end mb-4">
@@ -52,15 +53,18 @@ export default function AdminLogin() {
           </button>
         </div>
 
-        <div className="text-center">
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t.access[language]}</p>
+        <div className="text-center reveal">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/80 bg-white/90 p-2 shadow-sm">
+            <img src={logo} alt="Van Van Cambodia" className="h-10 w-10 object-contain" />
+          </div>
+          <p className="mt-5 text-xs uppercase tracking-[0.4em] text-slate-500">{t.access[language]}</p>
           <h1 className="mt-4 text-4xl font-semibold">{t.welcomeBack[language]}</h1>
           <p className="mt-3 text-sm text-slate-600">{t.loginDesc[language]}</p>
         </div>
 
-        {error && <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+        {error && <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 reveal">{error}</div>}
 
-        <form onSubmit={handleLogin} className="mt-6 space-y-5">
+        <form onSubmit={handleLogin} className="mt-6 space-y-5 reveal reveal-delay-1">
           <div>
             <label className="block text-sm font-semibold text-slate-700">{t.email[language]}</label>
             <input
@@ -92,7 +96,7 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <div className="mt-6 rounded-2xl bg-white/70 p-4 text-xs text-slate-600">
+        <div className="mt-6 rounded-2xl bg-white/70 p-4 text-xs text-slate-600 reveal reveal-delay-2">
           <p className="font-semibold text-slate-700">{t.demoCredentials[language]}</p>
           <p className="mt-2">{t.email[language]}: admin@example.com</p>
           <p>{t.password[language]}: password123</p>

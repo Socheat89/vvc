@@ -37,13 +37,13 @@ export default function ProductList() {
       <div className="mx-auto max-w-6xl px-4 py-16">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{t.tagline[language]}</p>
+            <span className="pill">{t.tagline[language]}</span>
             <h1 className="section-title mt-4">{t.title[language]}</h1>
             <p className="mt-4 max-w-2xl text-sm text-slate-600">{t.desc[language]}</p>
           </div>
           <div className="flex items-center gap-3 text-sm text-slate-600">
-            <span className="rounded-full bg-white/80 px-4 py-2">{t.allCategories[language]}</span>
-            <span className="rounded-full border border-white/60 px-4 py-2">{t.newestFirst[language]}</span>
+            <span className="pill">{t.allCategories[language]}</span>
+            <span className="pill">{t.newestFirst[language]}</span>
           </div>
         </div>
 
