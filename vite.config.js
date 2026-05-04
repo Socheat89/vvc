@@ -9,16 +9,16 @@ export default defineConfig({
     strictPort: false,
     proxy: {
       '/api': {
-        target: 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       }
     }
   },
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
+    minify: 'esbuild',
     chunkSizeWarningLimit: 500,
   },
   optimizeDeps: {

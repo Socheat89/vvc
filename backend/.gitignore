@@ -1,9 +1,0 @@
-/vendor
-.env
-.env.local
-.env.*.local
-storage/
-bootstrap/cache/
-public/uploads/
-.DS_Store
-*.log
