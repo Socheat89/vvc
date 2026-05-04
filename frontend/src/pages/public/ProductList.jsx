@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { productService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
+import ProductImage from '../../components/ProductImage';
 
 export default function ProductList() {
   const [products, setProducts] = useState([]);
@@ -59,8 +60,10 @@ export default function ProductList() {
                   className="glass-card group overflow-hidden rounded-3xl transition hover:-translate-y-1"
                 >
                   <div className="relative h-52 overflow-hidden">
-                    <img
+                    <ProductImage
                       src={product.image}
+                      name={product.name}
+                      category={product.category?.name}
                       alt={product.name}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />

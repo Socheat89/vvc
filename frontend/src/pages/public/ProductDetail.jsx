@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { productService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
+import ProductImage from '../../components/ProductImage';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -43,10 +44,13 @@ export default function ProductDetail() {
 
         <div className="mt-8 grid gap-10 md:grid-cols-2">
           <div className="glass-card overflow-hidden rounded-3xl">
-            <img
+            <ProductImage
               src={product.image}
+              name={product.name}
+              category={product.category?.name}
               alt={product.name}
-              className="h-full w-full object-cover"
+              className="h-full min-h-[22rem] w-full object-cover"
+              loading="eager"
             />
           </div>
 
