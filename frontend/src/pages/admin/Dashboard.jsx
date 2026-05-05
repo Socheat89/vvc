@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { productService, categoryService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
@@ -97,7 +97,7 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
         {error}
       </div>
     );
@@ -132,7 +132,7 @@ export default function Dashboard() {
         </div>
         <div className="glass-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-slate-300/60">
           <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{t.categories[language]}</p>
-          <p className="mt-3 text-3xl font-semibold text-[var(--gold-deep)]">{stats.totalCategories}</p>
+          <p className="mt-3 text-3xl font-semibold text-[var(--teal)]">{stats.totalCategories}</p>
         </div>
         <div className="glass-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-slate-300/60">
           <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{t.totalStock[language]}</p>
@@ -144,7 +144,7 @@ export default function Dashboard() {
         </div>
         <div className="glass-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-slate-300/60">
           <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{t.inventoryValue[language]}</p>
-          <p className="mt-3 text-3xl font-semibold text-[var(--gold)]">
+          <p className="mt-3 text-3xl font-semibold text-[var(--ember)]">
             ${stats.inventoryValue.toFixed(2)}
           </p>
         </div>
@@ -169,10 +169,10 @@ export default function Dashboard() {
                 {recentProducts.map(product => {
                   const status =
                     Number(product.stock || 0) === 0
-                      ? { label: t.outOfStockLabel[language], className: 'bg-yellow-100 text-yellow-800' }
+                      ? { label: t.outOfStockLabel[language], className: 'bg-rose-100 text-rose-700' }
                       : Number(product.stock || 0) < 10
                         ? { label: t.lowStockLabel[language], className: 'bg-amber-100 text-amber-800' }
-                        : { label: t.inStock[language], className: 'bg-yellow-100 text-yellow-800' };
+                        : { label: t.inStock[language], className: 'bg-emerald-100 text-emerald-800' };
 
                   return (
                     <tr key={product.id} className="border-b border-white/70 transition hover:bg-white/60">
@@ -206,7 +206,7 @@ export default function Dashboard() {
                 </div>
                 <div className="h-2 rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-[var(--gold-deep)]"
+                    className="h-full rounded-full bg-[var(--teal)]"
                     style={{ width: `${products.length ? (stats.healthyStock / products.length) * 100 : 0}%` }}
                   />
                 </div>
@@ -218,7 +218,7 @@ export default function Dashboard() {
                 </div>
                 <div className="h-2 rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-[var(--gold)]"
+                    className="h-full rounded-full bg-[var(--ember)]"
                     style={{
                       width: `${
                         products.length ? ((stats.lowStock + stats.outOfStock) / products.length) * 100 : 0
@@ -259,7 +259,7 @@ export default function Dashboard() {
         <div className="glass-card rounded-2xl p-5 reveal reveal-delay-2 transition-all duration-300 hover:shadow-lg">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-slate-900">{t.needsAttention[language]}</h2>
-            <Link to="/admin/products" className="text-sm font-semibold text-[var(--gold-deep)] hover:text-[var(--gold-deep)]">
+            <Link to="/admin/products" className="text-sm font-semibold text-[var(--teal)] hover:text-emerald-700">
               {t.viewAll[language]}
             </Link>
           </div>
