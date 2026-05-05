@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
@@ -42,7 +42,7 @@ export default function AdminLogin() {
           <button
             onClick={toggleLanguage}
             title={language === 'kh' ? 'Switch to English' : 'ប្តូរទៅភាសាខ្មែរ'}
-            className="flex items-center gap-1.5 rounded-full border border-[var(--gold)]/40 bg-[var(--gold)]/5 px-3 py-1.5 text-xs font-semibold text-[var(--gold)] transition hover:bg-[var(--gold)]/15"
+            className="flex items-center gap-1.5 rounded-full border border-[var(--ember)]/40 bg-[var(--ember)]/5 px-3 py-1.5 text-xs font-semibold text-[var(--ember)] transition hover:bg-[var(--ember)]/15"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -62,7 +62,7 @@ export default function AdminLogin() {
           <p className="mt-3 text-sm text-slate-600">{t.loginDesc[language]}</p>
         </div>
 
-        {error && <div className="mt-6 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 reveal">{error}</div>}
+        {error && <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 reveal">{error}</div>}
 
         <form onSubmit={handleLogin} className="mt-6 space-y-5 reveal reveal-delay-1">
           <div>
@@ -71,7 +71,7 @@ export default function AdminLogin() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm focus:border-[var(--gold)] focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm focus:border-[var(--ember)] focus:outline-none"
               required
             />
           </div>
@@ -82,7 +82,7 @@ export default function AdminLogin() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm focus:border-[var(--gold)] focus:outline-none"
+              className="mt-2 w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm focus:border-[var(--ember)] focus:outline-none"
               required
             />
           </div>
