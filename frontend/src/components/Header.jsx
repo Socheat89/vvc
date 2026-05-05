@@ -27,13 +27,19 @@ export default function Header() {
         <div className="hidden items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 p-2 text-sm font-semibold text-slate-600 shadow-sm md:flex">
           <button
             onClick={() => navigate('/')}
-            className="rounded-full px-4 py-2 transition hover:bg-slate-900 hover:text-white"
+            className="rounded-full px-4 py-2 transition hover:bg-[var(--gold)] hover:text-white"
           >
             {t.header.home[language]}
           </button>
           <button
+            onClick={() => navigate('/about')}
+            className="rounded-full px-4 py-2 transition hover:bg-[var(--gold)] hover:text-white"
+          >
+            {t.header.about[language]}
+          </button>
+          <button
             onClick={() => navigate('/products')}
-            className="rounded-full px-4 py-2 transition hover:bg-slate-900 hover:text-white"
+            className="rounded-full px-4 py-2 transition hover:bg-[var(--gold)] hover:text-white"
           >
             {t.header.products[language]}
           </button>
