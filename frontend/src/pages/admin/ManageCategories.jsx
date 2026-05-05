@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { categoryService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
@@ -275,13 +275,13 @@ export default function ManageCategories() {
       </div>
 
       {formError && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {formError}
         </div>
       )}
 
       {importResult && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           {t.importSuccess[language]} {t.created[language]}: {importResult.created || 0}, {t.updated[language]}:{' '}
           {importResult.updated || 0}, {t.skipped[language]}: {importResult.skipped_count || 0}
         </div>
@@ -325,7 +325,7 @@ export default function ManageCategories() {
                 type="text"
                 value={formData.name}
                 onChange={(event) => setFormData({ ...formData, name: event.target.value })}
-                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--gold)]"
+                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
                 required
               />
             </div>
@@ -335,7 +335,7 @@ export default function ManageCategories() {
               <textarea
                 value={formData.description}
                 onChange={(event) => setFormData({ ...formData, description: event.target.value })}
-                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-[var(--gold)]"
+                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-[var(--ember)]"
                 rows="4"
               />
             </div>
@@ -344,7 +344,7 @@ export default function ManageCategories() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-full bg-[var(--gold-deep)] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-[var(--teal)] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? t.saving[language] : t.save[language]}
               </button>
@@ -365,8 +365,8 @@ export default function ManageCategories() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--ink)]/40 backdrop-blur-sm page-fade">
           <div className="glass-card w-full max-w-md rounded-3xl p-6 shadow-2xl reveal">
             <div className="text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100 mb-4">
-                <svg className="h-8 w-8 text-yellow-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 mb-4">
+                <svg className="h-8 w-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
@@ -376,7 +376,7 @@ export default function ManageCategories() {
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="inline-flex justify-center rounded-full bg-[var(--gold)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--gold-deep)]"
+                className="inline-flex justify-center rounded-full bg-rose-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rose-700"
               >
                 {t.delete[language]}
               </button>
@@ -401,13 +401,13 @@ export default function ManageCategories() {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={t.searchPlaceholder[language]}
-              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--gold)]"
+              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
             />
           </div>
           <select
             value={sortBy}
             onChange={(event) => setSortBy(event.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--gold)]"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
             aria-label={t.sortBy[language]}
           >
             {sortOptions.map(option => (
@@ -465,7 +465,7 @@ export default function ManageCategories() {
                         <button
                           type="button"
                           onClick={() => handleEdit(category)}
-                          className="rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-semibold text-[var(--gold-deep)] transition hover:bg-yellow-100"
+                          className="rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-xs font-semibold text-[var(--teal)] transition hover:bg-teal-100"
                         >
                           {t.edit[language]}
                         </button>
@@ -473,7 +473,7 @@ export default function ManageCategories() {
                           type="button"
                           onClick={() => handleDelete(category.id)}
                           disabled={isDeleting}
-                          className="rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-semibold text-yellow-800 transition hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isDeleting ? t.deleting[language] : t.delete[language]}
                         </button>
