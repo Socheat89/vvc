@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import translations from '../translations';
 
@@ -14,6 +15,9 @@ export default function Footer() {
             <div>
               <h3 className="text-lg font-semibold">{t.about[language]}</h3>
               <p className="mt-4 text-sm text-slate-600">{t.aboutDesc[language]}</p>
+              <Link to="/about" className="mt-4 inline-flex text-sm font-semibold text-[var(--gold)] hover:text-[var(--gold-deep)]">
+                {t.learnMore[language]}
+              </Link>
             </div>
             <div>
               <h3 className="text-lg font-semibold">{t.collections[language]}</h3>

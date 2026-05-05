@@ -4,10 +4,45 @@ import { productService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
 
+const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
+
+const extractUploadPath = (value) => {
+  const normalizedValue = String(value).trim().replace(/\\/g, '/');
+  const lowerValue = normalizedValue.toLowerCase();
+  const productUploadIndex = lowerValue.indexOf('uploads/products/');
+  const uploadIndex = lowerValue.indexOf('uploads/');
+
+  if (productUploadIndex >= 0) {
+    return normalizedValue.slice(productUploadIndex).replace(/^\/+/, '');
+  }
+
+  if (uploadIndex >= 0) {
+    return normalizedValue.slice(uploadIndex).replace(/^\/+/, '');
+  }
+
+  return '';
+};
+
 const getImageUrl = (image) => {
   if (!image) return '';
-  if (/^https?:\/\//i.test(image)) return image;
-  return `https://app.vvc.asia/vvc_web/vvc/backend/public/${String(image).replace(/^\/+/, '')}`;
+  const rawImage = String(image).trim().replace(/\\/g, '/');
+  if (!rawImage) return '';
+  if (/^(data:|blob:)/i.test(rawImage)) return rawImage;
+
+  const uploadPath = extractUploadPath(rawImage);
+  if (uploadPath) {
+    return `${PUBLIC_ASSET_BASE}/${uploadPath}`;
+  }
+
+  if (/^https?:\/\//i.test(rawImage)) {
+    return rawImage;
+  }
+
+  let imagePath = rawImage.replace(/^\/+/, '');
+  imagePath = imagePath.replace(/^public\//i, '').replace(/^backend\/public\//i, '');
+
+  return `${PRODUCT_UPLOAD_BASE}/${imagePath}`;
 };
 
 const getInitials = (name = '') => {

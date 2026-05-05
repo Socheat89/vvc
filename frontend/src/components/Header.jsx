@@ -32,6 +32,12 @@ export default function Header() {
             {t.header.home[language]}
           </button>
           <button
+            onClick={() => navigate('/about')}
+            className="rounded-full px-4 py-2 transition hover:bg-[var(--gold)] hover:text-white"
+          >
+            {t.header.about[language]}
+          </button>
+          <button
             onClick={() => navigate('/products')}
             className="rounded-full px-4 py-2 transition hover:bg-[var(--gold)] hover:text-white"
           >

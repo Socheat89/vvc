@@ -9,6 +9,10 @@ const translations = {
       kh: 'ទំព័រដើម',
       en: 'Home',
     },
+    about: {
+      kh: 'អំពីយើង',
+      en: 'About',
+    },
     products: {
       kh: 'ផលិតផល',
       en: 'Products',
@@ -28,6 +32,10 @@ const translations = {
     aboutDesc: {
       kh: 'VVC រៀបចំរឿងរ៉ាវផលិតផល និងអបអរសាទរការច្នៃប្រឌិត ភាពលម្អិត និងអ្នកផលិតពីទូទាំងពិភពលោក។',
       en: 'VVC curates product stories and celebrates craft, detail, and global makers.',
+    },
+    learnMore: {
+      kh: 'ស្វែងយល់បន្ថែម',
+      en: 'Learn more',
     },
     collections: {
       kh: 'កម្រង',
@@ -220,6 +228,194 @@ const translations = {
     feature3Desc: {
       kh: 'ជួយឆ្លើយសំណួរអំពីការប្រើប្រាស់ ការថែទាំ និងភាពសមរម្យសម្រាប់តម្រូវការរបស់អ្នក។',
       en: 'Helpful answers around use, care, and whether the product fits the customer need.',
+    },
+  },
+
+  // ===== ABOUT PAGE =====
+  aboutPage: {
+    tagline: {
+      kh: 'អំពីក្រុមហ៊ុន',
+      en: 'About the Company',
+    },
+    title: {
+      kh: 'Van Van Cambodia',
+      en: 'Van Van Cambodia',
+    },
+    titleSpan: {
+      kh: 'ជួយឲ្យអ្នកស្គាល់ផលិតផលឲ្យច្បាស់',
+      en: 'helps people understand products clearly',
+    },
+    heroDesc: {
+      kh: 'យើងរៀបចំព័ត៌មានផលិតផលឲ្យងាយយល់ ដើម្បីឲ្យអតិថិជនមើលឃើញរឿងរ៉ាវ គុណភាព ការប្រើប្រាស់ និងតម្លៃពិតមុនពេលជ្រើសរើស។',
+      en: 'We organize product information into a clear, human guide so customers can understand the story, quality, use, and real value before choosing.',
+    },
+    primaryCta: {
+      kh: 'មើលផលិតផល',
+      en: 'View Products',
+    },
+    secondaryCta: {
+      kh: 'មើលគុណតម្លៃ',
+      en: 'See Our Values',
+    },
+    brandNote: {
+      kh: 'ប្រវត្តិក្រុមហ៊ុន',
+      en: 'Company Profile',
+    },
+    identityTitle: {
+      kh: 'VVC',
+      en: 'VVC',
+    },
+    identityDesc: {
+      kh: 'ផែនទីផលិតផលសម្រាប់ការជ្រើសរើសប្រកបដោយទំនុកចិត្ត',
+      en: 'A product atlas for confident decisions',
+    },
+    chipStory: {
+      kh: 'រឿងរ៉ាវ',
+      en: 'Story',
+    },
+    chipQuality: {
+      kh: 'គុណភាព',
+      en: 'Quality',
+    },
+    chipCare: {
+      kh: 'ការថែទាំ',
+      en: 'Care',
+    },
+    chipTrust: {
+      kh: 'ទំនុកចិត្ត',
+      en: 'Trust',
+    },
+    stat1Value: {
+      kh: 'VVC',
+      en: 'VVC',
+    },
+    stat1Label: {
+      kh: 'ម៉ាកសញ្ញា',
+      en: 'Brand identity',
+    },
+    stat2Value: {
+      kh: '3',
+      en: '3',
+    },
+    stat2Label: {
+      kh: 'គោលការណ៍ណែនាំ',
+      en: 'Guiding principles',
+    },
+    stat3Value: {
+      kh: '4',
+      en: '4',
+    },
+    stat3Label: {
+      kh: 'ចំណុចពិនិត្យផលិតផល',
+      en: 'Product checkpoints',
+    },
+    stat4Value: {
+      kh: 'KH',
+      en: 'KH',
+    },
+    stat4Label: {
+      kh: 'មូលដ្ឋាននៅកម្ពុជា',
+      en: 'Cambodia based',
+    },
+    missionKicker: {
+      kh: 'បេសកកម្ម',
+      en: 'Mission',
+    },
+    missionTitle: {
+      kh: 'បង្កើតការជ្រើសរើសផលិតផលឲ្យមានន័យ',
+      en: 'Make product discovery more meaningful',
+    },
+    missionDesc: {
+      kh: 'VVC ផ្តោតលើការបង្ហាញផលិតផលជាមួយបរិបទពេញលេញ មិនមែនត្រឹមតែឈ្មោះ តម្លៃ និងរូបភាពទេ។ រាល់ព័ត៌មានត្រូវបានរៀបចំឲ្យសាមញ្ញ ច្បាស់ និងមានប្រយោជន៍សម្រាប់អ្នកប្រើប្រាស់។',
+      en: 'VVC focuses on presenting products with complete context, not only a name, price, and image. Every detail is shaped to feel simple, clear, and useful for real customers.',
+    },
+    missionQuote: {
+      kh: 'យើងជឿថា ផលិតផលល្អគួរតែមានរឿងរ៉ាវច្បាស់ គុណភាពដែលអាចទុកចិត្តបាន និងការណែនាំដែលជួយឲ្យអតិថិជនជ្រើសរើសដោយមានទំនុកចិត្ត។',
+      en: 'We believe a good product deserves a clear story, dependable quality, and guidance that helps customers choose with confidence.',
+    },
+    valuesKicker: {
+      kh: 'គុណតម្លៃ',
+      en: 'Values',
+    },
+    valuesTitle: {
+      kh: 'អ្វីដែលយើងផ្តោត',
+      en: 'What We Focus On',
+    },
+    value1Title: {
+      kh: 'រឿងរ៉ាវច្បាស់',
+      en: 'Clear Product Story',
+    },
+    value1Desc: {
+      kh: 'យើងរៀបចំព័ត៌មានពីគោលបំណង ការរចនា និងអត្ថប្រយោជន៍របស់ផលិតផលឲ្យអានងាយ និងយល់លឿន។',
+      en: 'We organize purpose, design, and benefits into a readable flow that helps customers understand faster.',
+    },
+    value2Title: {
+      kh: 'គុណភាពមុនគេ',
+      en: 'Quality First',
+    },
+    value2Desc: {
+      kh: 'យើងគិតពីសម្ភារៈ ការប្រើប្រាស់ និងចំណុចដែលអាចជួយបង្ហាញភាពទុកចិត្តបានរបស់ផលិតផល។',
+      en: 'We look at materials, use, and the checkpoints that make a product easier to trust.',
+    },
+    value3Title: {
+      kh: 'ការណែនាំមានប្រយោជន៍',
+      en: 'Useful Guidance',
+    },
+    value3Desc: {
+      kh: 'យើងចង់ឲ្យអតិថិជនទទួលបានចម្លើយជាក់ស្តែង មុនពេលសម្រេចចិត្តលើផលិតផលណាមួយ។',
+      en: 'We want customers to get practical answers before making a decision about any product.',
+    },
+    processKicker: {
+      kh: 'របៀបធ្វើការ',
+      en: 'How We Work',
+    },
+    processTitle: {
+      kh: 'ពីការជ្រើសរើសរហូតដល់ការណែនាំ',
+      en: 'From selection to guidance',
+    },
+    process1Title: {
+      kh: 'ជ្រើសរើស',
+      en: 'Select',
+    },
+    process1Desc: {
+      kh: 'កំណត់ផលិតផលដែលសមស្របនឹងតម្រូវការអតិថិជន និងទិសដៅរបស់ម៉ាក។',
+      en: 'Choose products that fit customer needs and the direction of the brand.',
+    },
+    process2Title: {
+      kh: 'ពិនិត្យ',
+      en: 'Check',
+    },
+    process2Desc: {
+      kh: 'មើលសម្ភារៈ គុណភាព ព័ត៌មានស្តុក និងចំណុចសំខាន់ៗដែលអតិថិជនត្រូវដឹង។',
+      en: 'Review materials, quality, stock details, and the essentials customers should know.',
+    },
+    process3Title: {
+      kh: 'ពន្យល់',
+      en: 'Explain',
+    },
+    process3Desc: {
+      kh: 'បង្កើតការពិពណ៌នាដែលច្បាស់ ងាយអាន និងជួយឲ្យការប្រៀបធៀបកាន់តែងាយស្រួល។',
+      en: 'Create clear descriptions that are easy to read and easier to compare.',
+    },
+    process4Title: {
+      kh: 'គាំទ្រ',
+      en: 'Support',
+    },
+    process4Desc: {
+      kh: 'បន្តផ្តល់ព័ត៌មាន និងការណែនាំ ដើម្បីឲ្យអតិថិជនប្រើប្រាស់ផលិតផលបានល្អជាងមុន។',
+      en: 'Continue sharing guidance so customers can use products with more confidence.',
+    },
+    ctaTitle: {
+      kh: 'ចង់ស្គាល់ផលិតផលឲ្យកាន់តែច្បាស់?',
+      en: 'Want to understand products more clearly?',
+    },
+    ctaDesc: {
+      kh: 'ចាប់ផ្តើមពីបញ្ជីផលិតផលរបស់ VVC ហើយស្វែងរកព័ត៌មានដែលជួយឲ្យការជ្រើសរើសមានទំនុកចិត្ត។',
+      en: 'Start with the VVC product list and discover details that make each choice feel more confident.',
+    },
+    ctaButton: {
+      kh: 'ចាប់ផ្តើមស្វែងរក',
+      en: 'Start Exploring',
     },
   },
 
