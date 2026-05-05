@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
 import Home from './pages/public/Home';
+import About from './pages/public/About';
 import ProductList from './pages/public/ProductList';
 import ProductDetail from './pages/public/ProductDetail';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -22,6 +23,7 @@ export default function App() {
           {/* Public Routes */}
           <Route path="/" element={<PublicLayout />}>
             <Route index element={<Home />} />
+            <Route path="about" element={<About />} />
             <Route path="products" element={<ProductList />} />
             <Route path="products/:id" element={<ProductDetail />} />
           </Route>

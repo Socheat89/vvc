@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const LanguageContext = createContext();
 
@@ -6,6 +6,10 @@ export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(
     () => localStorage.getItem('vvc_language') || 'kh'
   );
+
+  useEffect(() => {
+    document.documentElement.lang = language === 'kh' ? 'km' : 'en';
+  }, [language]);
 
   const toggleLanguage = () => {
     setLanguage(prev => {
