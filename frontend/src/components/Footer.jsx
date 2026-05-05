@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import translations from '../translations';
 
@@ -7,39 +8,42 @@ export default function Footer() {
   const t = translations.footer;
 
   return (
-    <footer className="mt-20 bg-[var(--coal)] text-white">
+    <footer className="mt-20 border-t border-[var(--stroke)] bg-white text-[var(--coal)]">
       <div className="mx-auto max-w-6xl px-4 py-16">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-10 backdrop-blur">
+        <div className="rounded-lg border border-[var(--stroke)] bg-[var(--fog)] p-10 shadow-sm">
           <div className="grid gap-10 md:grid-cols-4">
             <div>
               <h3 className="text-lg font-semibold">{t.about[language]}</h3>
-              <p className="mt-4 text-sm text-slate-300">{t.aboutDesc[language]}</p>
+              <p className="mt-4 text-sm text-slate-600">{t.aboutDesc[language]}</p>
+              <Link to="/about" className="mt-4 inline-flex text-sm font-semibold text-[var(--gold)] hover:text-[var(--gold-deep)]">
+                {t.learnMore[language]}
+              </Link>
             </div>
             <div>
               <h3 className="text-lg font-semibold">{t.collections[language]}</h3>
-              <ul className="mt-4 space-y-2 text-sm text-slate-300">
-                <li><a href="#" className="hover:text-white">{t.electronics[language]}</a></li>
-                <li><a href="#" className="hover:text-white">{t.clothing[language]}</a></li>
-                <li><a href="#" className="hover:text-white">{t.books[language]}</a></li>
+              <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                <li><a href="#" className="hover:text-[var(--gold)]">{t.electronics[language]}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)]">{t.clothing[language]}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)]">{t.books[language]}</a></li>
               </ul>
             </div>
             <div>
               <h3 className="text-lg font-semibold">{t.support[language]}</h3>
-              <ul className="mt-4 space-y-2 text-sm text-slate-300">
-                <li><a href="#" className="hover:text-white">{t.contact[language]}</a></li>
-                <li><a href="#" className="hover:text-white">{t.faq[language]}</a></li>
+              <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                <li><a href="#" className="hover:text-[var(--gold)]">{t.contact[language]}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)]">{t.faq[language]}</a></li>
               </ul>
             </div>
             <div>
               <h3 className="text-lg font-semibold">{t.legal[language]}</h3>
-              <ul className="mt-4 space-y-2 text-sm text-slate-300">
-                <li><a href="#" className="hover:text-white">{t.privacy[language]}</a></li>
-                <li><a href="#" className="hover:text-white">{t.terms[language]}</a></li>
+              <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                <li><a href="#" className="hover:text-[var(--gold)]">{t.privacy[language]}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)]">{t.terms[language]}</a></li>
               </ul>
             </div>
           </div>
         </div>
-        <div className="mt-10 border-t border-white/10 pt-8 text-center text-sm text-slate-400">
+        <div className="mt-10 border-t border-[var(--stroke)] pt-8 text-center text-sm text-slate-500">
           <p>{t.copyright[language]}</p>
         </div>
       </div>
