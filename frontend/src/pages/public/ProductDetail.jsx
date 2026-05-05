@@ -1,15 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+﻿import React, { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { productService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
-import ProductImage from '../../components/ProductImage';
+
+const getImageUrl = (image) => {
+  if (!image) return '';
+  if (/^https?:\/\//i.test(image)) return image;
+  return `https://app.vvc.asia/vvc_web/vvc/backend/public/${String(image).replace(/^\/+/, '')}`;
+};
+
+const getInitials = (name = '') => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return (words[0]?.[0] || 'V') + (words[1]?.[0] || 'V');
+};
 
 export default function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageError, setImageError] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [relatedImageErrors, setRelatedImageErrors] = useState({});
   const { language } = useLanguage();
   const t = translations.productDetail;
 
@@ -20,9 +33,37 @@ export default function ProductDetail() {
   const fetchProduct = async () => {
     try {
       setLoading(true);
-      const response = await productService.getById(id);
-      setProduct(response.data.data);
+      const [productResult, productListResult] = await Promise.allSettled([
+        productService.getById(id),
+        productService.getAll(),
+      ]);
+
+      if (productResult.status !== 'fulfilled') {
+        throw productResult.reason;
+      }
+
+      const productData = productResult.value.data.data;
+      const allProducts = productListResult.status === 'fulfilled'
+        ? productListResult.value.data.data || []
+        : [];
+      const currentCategoryId = productData.category?.id || productData.category_id;
+      const currentCategoryName = productData.category?.name;
+      const recommendations = allProducts
+        .filter((item) => {
+          if (String(item.id) === String(productData.id)) return false;
+          const itemCategoryId = item.category?.id || item.category_id;
+          if (currentCategoryId && itemCategoryId) {
+            return String(itemCategoryId) === String(currentCategoryId);
+          }
+          return currentCategoryName && item.category?.name === currentCategoryName;
+        })
+        .slice(0, 4);
+
+      setProduct(productData);
+      setRelatedProducts(recommendations);
       setError(null);
+      setImageError(false);
+      setRelatedImageErrors({});
     } catch (err) {
       setError(t.loadError[language]);
       console.error(err);
@@ -32,69 +73,125 @@ export default function ProductDetail() {
   };
 
   if (loading) return <div className="mx-auto max-w-6xl px-4 py-16">{t.loading[language]}</div>;
-  if (error)   return <div className="mx-auto max-w-6xl px-4 py-16 text-red-600">{error}</div>;
+  if (error) return <div className="mx-auto max-w-6xl px-4 py-16 text-yellow-700">{error}</div>;
   if (!product) return <div className="mx-auto max-w-6xl px-4 py-16">{t.notFound[language]}</div>;
 
+  const imageUrl = getImageUrl(product.image);
+  const hasImage = imageUrl && !imageError;
+  const inStock = Number(product.stock) > 0;
+  const details = [
+    { label: t.category[language], value: product.category?.name || t.uncategorized[language] },
+    { label: t.stock[language], value: inStock ? `${product.stock} ${t.inStock[language]}` : t.outOfStock[language] },
+    { label: t.itemCode[language], value: product.item_code || product.code || `#${product.id}` },
+    { label: t.price[language], value: `$${Number(product.price || 0).toFixed(2)}` },
+  ];
+
   return (
-    <div className="mesh-bg">
-      <div className="mx-auto max-w-6xl px-4 py-16">
-        <Link to="/products" className="text-sm uppercase tracking-[0.3em] text-slate-500">
+    <div className="product-detail-page">
+      <div className="mx-auto max-w-6xl px-4 py-12">
+        <Link to="/products" className="product-detail-back">
           {t.backToProducts[language]}
         </Link>
 
-        <div className="mt-8 grid gap-10 md:grid-cols-2">
-          <div className="glass-card overflow-hidden rounded-3xl">
-            <ProductImage
-              src={product.image}
-              name={product.name}
-              category={product.category?.name}
-              alt={product.name}
-              className="h-full min-h-[22rem] w-full object-cover"
-              loading="eager"
-            />
+        <section className="product-detail-shell">
+          <div className="product-detail-media-card">
+            <div className="product-detail-media">
+              {hasImage ? (
+                <img src={imageUrl} alt={product.name} onError={() => setImageError(true)} />
+              ) : (
+                <div className="product-detail-fallback">
+                  <span>{getInitials(product.name)}</span>
+                  <small>{t.imagePreview[language]}</small>
+                </div>
+              )}
+            </div>
+            <div className="product-detail-media-caption">
+              <span>{product.category?.name || t.uncategorized[language]}</span>
+              <strong>{inStock ? t.available[language] : t.outOfStock[language]}</strong>
+            </div>
           </div>
 
-          <div className="space-y-6">
-            <h1 className="text-4xl font-semibold md:text-5xl">{product.name}</h1>
+          <div className="product-detail-content">
+            <div className="product-detail-kicker">{t.productPassport[language]}</div>
+            <h1>{product.name}</h1>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="text-3xl font-semibold text-[var(--ember)]">
-                ${parseFloat(product.price).toFixed(2)}
-              </span>
-              <span
-                className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                  product.stock > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                }`}
-              >
-                {product.stock > 0
-                  ? `${product.stock} ${t.inStock[language]}`
-                  : t.outOfStock[language]}
-              </span>
+            <div className="product-detail-price-row">
+              <span>${Number(product.price || 0).toFixed(2)}</span>
+              <strong className={inStock ? 'in' : 'out'}>
+                {inStock ? `${product.stock} ${t.inStock[language]}` : t.outOfStock[language]}
+              </strong>
             </div>
 
-            {product.category && (
-              <p className="text-sm text-slate-600">
-                {t.category[language]}: <span className="font-semibold text-slate-800">{product.category.name}</span>
-              </p>
-            )}
-
-            <div className="glass-card rounded-3xl p-6">
-              <h3 className="text-2xl font-semibold">{t.productDetails[language]}</h3>
-              <p className="mt-4 text-sm leading-relaxed text-slate-600">{product.description}</p>
+            <div className="product-detail-summary">
+              <h2>{t.productDetails[language]}</h2>
+              <p>{product.description || t.noDescription[language]}</p>
             </div>
 
-            <button
-              disabled={product.stock === 0}
-              className={`w-full rounded-full px-6 py-3 text-sm font-semibold text-white transition ${
-                product.stock > 0
-                  ? 'bg-[var(--teal)] hover:brightness-110'
-                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              {product.stock > 0 ? t.reserve[language] : t.outOfStock[language]}
-            </button>
+            <div className="product-detail-grid">
+              {details.map((item) => (
+                <div key={item.label} className="product-detail-fact">
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="product-detail-action-row">
+              <button disabled={!inStock} className="product-detail-primary-action">
+                {inStock ? t.reserve[language] : t.outOfStock[language]}
+              </button>
+              <Link to="/products" className="product-detail-secondary-action">
+                {t.viewMore[language]}
+              </Link>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {relatedProducts.length > 0 && (
+          <section className="product-recommendation-section">
+            <div className="product-recommendation-header">
+              <div>
+                <span>{t.sameCategory[language]}</span>
+                <h2>{t.recommendedTitle[language]}</h2>
+                <p>{t.recommendedDesc[language]}</p>
+              </div>
+              <Link to="/products" className="product-detail-secondary-action">
+                {t.viewMore[language]}
+              </Link>
+            </div>
+
+            <div className="product-recommendation-grid">
+              {relatedProducts.map((item) => {
+                const relatedImageUrl = getImageUrl(item.image);
+                const hasRelatedImage = relatedImageUrl && !relatedImageErrors[item.id];
+
+                return (
+                  <Link key={item.id} to={`/products/${item.id}`} className="product-recommendation-card">
+                    <div className="product-recommendation-media">
+                      {hasRelatedImage ? (
+                        <img
+                          src={relatedImageUrl}
+                          alt={item.name}
+                          onError={() => setRelatedImageErrors((current) => ({ ...current, [item.id]: true }))}
+                        />
+                      ) : (
+                        <div className="product-recommendation-fallback">{getInitials(item.name)}</div>
+                      )}
+                    </div>
+                    <div className="product-recommendation-body">
+                      <span>{item.category?.name || t.uncategorized[language]}</span>
+                      <h3>{item.name}</h3>
+                      <div>
+                        <strong>${Number(item.price || 0).toFixed(2)}</strong>
+                        <small>{t.viewProduct[language]}</small>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
