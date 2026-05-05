@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@layer base {
+	:root {
+		--ink: #0f172a;
+		--coal: #111827;
+		--fog: #f6f4ef;
+		--sand: #efe6d6;
+		--ember: #f05d3b;
+		--teal: #1f8a70;
+		--sky: #9fd9f3;
+		--gold: #f0c36a;
+		--card: rgba(255, 255, 255, 0.8);
+		--ring: rgba(15, 23, 42, 0.12);
+	}
+
+	html {
+		scroll-behavior: smooth;
+	}
+
+	body {
+		font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+		color: var(--ink);
+		background: radial-gradient(1200px 600px at 10% -10%, #ffffff 0%, var(--fog) 45%, #f7f2e8 100%);
+	}
+
+	h1, h2, h3, h4 {
+		font-family: 'Cormorant Garamond', Georgia, serif;
+		letter-spacing: 0.3px;
+	}
+}
+
+@layer components {
+	.mesh-bg {
+		background-image:
+			radial-gradient(300px 120px at 10% 10%, rgba(240, 195, 106, 0.3), transparent 70%),
+			radial-gradient(400px 160px at 90% 0%, rgba(159, 217, 243, 0.25), transparent 70%),
+			radial-gradient(300px 200px at 70% 90%, rgba(31, 138, 112, 0.18), transparent 70%);
+	}
+
+	.glass-card {
+		background: var(--card);
+		border: 1px solid rgba(255, 255, 255, 0.7);
+		box-shadow: 0 20px 40px -30px rgba(15, 23, 42, 0.6);
+		backdrop-filter: blur(12px);
+	}
+
+	.btn-primary {
+		@apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold transition;
+		background: linear-gradient(120deg, var(--ember), #f7a14a);
+		color: #fff;
+		box-shadow: 0 12px 30px -18px rgba(240, 93, 59, 0.7);
+	}
+
+	.btn-primary:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 16px 30px -16px rgba(240, 93, 59, 0.7);
+	}
+
+	.btn-secondary {
+		@apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold transition;
+		background: #fff;
+		border: 1px solid rgba(15, 23, 42, 0.12);
+	}
+
+	.section-title {
+		@apply text-4xl md:text-5xl font-semibold;
+	}
+
+	.reveal {
+		opacity: 0;
+		transform: translateY(18px);
+		animation: reveal 0.8s ease forwards;
+	}
+
+	.reveal-delay-1 {
+		animation-delay: 0.15s;
+	}
+
+	.reveal-delay-2 {
+		animation-delay: 0.3s;
+	}
+
+	.reveal-delay-3 {
+		animation-delay: 0.45s;
+	}
+
+	.page-fade {
+		animation: pageFade 0.35s ease;
+	}
+}
+
+@keyframes reveal {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes pageFade {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
