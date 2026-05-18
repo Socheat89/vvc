@@ -1,12 +1,68 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Autoplay, Pagination } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
-import logo from '../../assets/logo.png';
+import { productService } from '../../services/api';
+import 'swiper/css';
+import 'swiper/css/pagination';
+
+const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
+
+const extractUploadPath = (value) => {
+  const normalizedValue = String(value).trim().replace(/\\/g, '/');
+  const lowerValue = normalizedValue.toLowerCase();
+  const productUploadIndex = lowerValue.indexOf('uploads/products/');
+  const uploadIndex = lowerValue.indexOf('uploads/');
+
+  if (productUploadIndex >= 0) {
+    return normalizedValue.slice(productUploadIndex).replace(/^\/+/, '');
+  }
+
+  if (uploadIndex >= 0) {
+    return normalizedValue.slice(uploadIndex).replace(/^\/+/, '');
+  }
+
+  return '';
+};
+
+const getImageUrl = (image) => {
+  if (!image) return '';
+  const rawImage = String(image).trim().replace(/\\/g, '/');
+  if (!rawImage) return '';
+  if (/^(data:|blob:)/i.test(rawImage)) return rawImage;
+
+  const uploadPath = extractUploadPath(rawImage);
+  if (uploadPath) {
+    return `${PUBLIC_ASSET_BASE}/${uploadPath}`;
+  }
+
+  if (/^https?:\/\//i.test(rawImage)) {
+    return rawImage;
+  }
+
+  let imagePath = rawImage.replace(/^\/+/, '');
+  imagePath = imagePath.replace(/^public\//i, '').replace(/^backend\/public\//i, '');
+
+  return `${PRODUCT_UPLOAD_BASE}/${imagePath}`;
+};
+
+const getInitials = (name = '') => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return (words[0]?.[0] || 'V') + (words[1]?.[0] || 'V');
+};
+
+const featuredLoadingCards = Array.from({ length: 4 }, (_, index) => index);
 
 export default function Home() {
   const { language } = useLanguage();
   const t = translations.home;
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [featuredError, setFeaturedError] = useState(false);
+  const [imageErrors, setImageErrors] = useState({});
 
   const principles = [
     { step: '01', titleKey: 'feature1Title', descKey: 'feature1Desc' },
@@ -14,113 +70,107 @@ export default function Home() {
     { step: '03', titleKey: 'feature3Title', descKey: 'feature3Desc' },
   ];
 
-  const meaningChips = ['chipStory', 'chipQuality', 'chipGuidance'];
-
-  const passportPoints = [
-    { titleKey: 'passportStory', descKey: 'passportStoryDesc' },
-    { titleKey: 'passportQuality', descKey: 'passportQualityDesc' },
-    { titleKey: 'passportUse', descKey: 'passportUseDesc' },
-    { titleKey: 'passportCare', descKey: 'passportCareDesc' },
+  const howSteps = [
+    { step: '01', titleKey: 'howStep1Title', descKey: 'howStep1Desc' },
+    { step: '02', titleKey: 'howStep2Title', descKey: 'howStep2Desc' },
+    { step: '03', titleKey: 'howStep3Title', descKey: 'howStep3Desc' },
   ];
+
+  const posterSlides = useMemo(() => [
+    {
+      id: 'intro',
+      tone: 'gold',
+      image: '',
+    },
+    {
+      id: 'meaning',
+      tone: 'paper',
+      image: '',
+    },
+    {
+      id: 'featured',
+      tone: 'ink',
+      image: '',
+    },
+  ], []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchFeaturedProducts = async () => {
+      try {
+        const response = await productService.getAll();
+        const products = response.data.data || [];
+        const latestProducts = [...products]
+          .sort((a, b) => Number(b.id || 0) - Number(a.id || 0))
+          .slice(0, 6);
+
+        if (isMounted) {
+          setFeaturedProducts(latestProducts);
+          setFeaturedError(false);
+        }
+      } catch (error) {
+        console.error(error);
+        if (isMounted) {
+          setFeaturedError(true);
+        }
+      } finally {
+        if (isMounted) {
+          setFeaturedLoading(false);
+        }
+      }
+    };
+
+    fetchFeaturedProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const visibleFeaturedProducts = useMemo(() => featuredProducts.slice(0, 4), [featuredProducts]);
 
   return (
     <div className="home-intro mesh-bg">
       <section className="home-hero-section">
-        <div className="relative z-10 mx-auto grid min-h-[calc(100vh-84px)] max-w-6xl items-center gap-10 px-4 pb-44 pt-12 lg:grid-cols-[1.02fr_0.98fr] lg:pb-48 lg:pt-14">
-          <div className="relative z-10 reveal">
-            <span className="pill">{t.tagline[language]}</span>
-            <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-tight text-[var(--coal)] sm:text-5xl lg:text-6xl">
-              {t.heroTitle[language]}{' '}
-              <span className="block text-[var(--gold)]">{t.heroTitleSpan[language]}</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 md:text-lg">
-              {t.heroDesc[language]}
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link to="/products" className="btn-primary">
-                {t.browseAtlas[language]}
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
-              <a href="#product-story" className="btn-secondary">
-                {t.newArrivals[language]}
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-            </div>
-
-            <div className="home-meaning-chips">
-              {meaningChips.map((chip) => (
-                <div key={chip} className="home-meaning-chip">
-                  <span />
-                  {t[chip][language]}
+        <Swiper
+          className="home-poster-swiper"
+          modules={[Autoplay, Pagination]}
+          slidesPerView={1}
+          loop
+          speed={900}
+          pagination={{ clickable: true }}
+          autoplay={{
+            delay: 3600,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
+          }}
+        >
+          {posterSlides.map((slide) => (
+            <SwiperSlide key={slide.id}>
+              <article className={`home-poster-slide home-poster-slide-${slide.tone}`}>
+                <div className="home-wave-ui home-poster-wave" aria-hidden="true">
+                  <svg className="home-wave home-wave-back" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                    <path d="M0,224 C160,188 300,174 430,196 C585,222 694,300 858,270 C1010,242 1134,148 1288,144 C1352,142 1406,154 1440,166 L1440,320 L0,320 Z" />
+                  </svg>
+                  <svg className="home-wave home-wave-mid" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                    <path d="M0,206 C170,246 288,252 430,216 C565,182 642,112 790,138 C942,164 1030,264 1192,250 C1296,240 1372,194 1440,176 L1440,320 L0,320 Z" />
+                  </svg>
+                  <svg className="home-wave home-wave-front" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                    <path d="M0,250 C150,224 278,212 420,232 C575,254 692,302 842,284 C1000,266 1084,202 1238,196 C1318,194 1388,210 1440,226 L1440,320 L0,320 Z" />
+                  </svg>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative z-10 reveal reveal-delay-1">
-            <div className="home-showcase glass-card rounded-lg p-5">
-              <div className="home-showcase-meta">
-                <span>{t.featuredDrop[language]}</span>
-                <span>{t.edition[language]}</span>
-              </div>
-
-              <div className="mt-5">
-                <div className="home-showcase-title-row">
-                  <div className="home-logo-mark">
-                    <img src={logo} alt="Van Van Cambodia" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-[var(--coal)] md:text-2xl">
-                      {t.featuredTitle[language]}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{t.featuredDesc[language]}</p>
-                  </div>
-                </div>
-
-                <div className="home-product-preview mt-5">
-                  <div className="home-product-core">
-                    <span>VVC</span>
-                    <strong>Atlas</strong>
-                    <small>{t.passportBadge[language]}</small>
-                  </div>
-                </div>
-
-                <div className="home-passport-points">
-                  {passportPoints.map((point) => (
-                    <div key={point.titleKey} className="home-passport-point">
-                      <span className="home-passport-dot" />
-                      <div>
-                        <strong>{t[point.titleKey][language]}</strong>
-                        <p>{t[point.descKey][language]}</p>
-                      </div>
+                <div className="home-poster-content">
+                  <div className="home-poster-art reveal" aria-hidden="true">
+                    <div className={`home-poster-banner ${slide.image ? '' : 'home-poster-banner-empty'}`}>
+                      {slide.image && <img src={slide.image} alt="" />}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-
-              <div className="home-note">
-                <div className="text-sm font-semibold text-slate-800">{t.nextDispatch[language]}</div>
-                <div className="mt-1 text-xs leading-5 text-slate-500">{t.releaseWindow[language]}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="home-wave-ui" aria-hidden="true">
-          <svg className="home-wave home-wave-back" viewBox="0 0 1440 260" preserveAspectRatio="none">
-            <path d="M0,118 C170,178 270,46 440,104 C610,162 725,206 900,132 C1060,64 1186,92 1440,132 L1440,260 L0,260 Z" />
-          </svg>
-          <svg className="home-wave home-wave-mid" viewBox="0 0 1440 260" preserveAspectRatio="none">
-            <path d="M0,156 C160,94 300,92 460,150 C620,208 740,194 910,126 C1080,58 1240,88 1440,152 L1440,260 L0,260 Z" />
-          </svg>
-          <svg className="home-wave home-wave-front" viewBox="0 0 1440 260" preserveAspectRatio="none">
-            <path d="M0,188 C180,126 320,132 480,180 C650,232 790,220 960,164 C1130,106 1280,126 1440,180 L1440,260 L0,260 Z" />
-          </svg>
-        </div>
+              </article>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </section>
 
       <section id="product-story" className="home-story-section mx-auto max-w-6xl px-4 pb-16 pt-14">
@@ -146,6 +196,109 @@ export default function Home() {
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section id="featured-products" className="home-featured-section">
+        <div className="mx-auto max-w-6xl px-4 py-16">
+          <div className="home-section-heading reveal">
+            <div>
+              <span>{t.featuredProductsKicker[language]}</span>
+              <h2>{t.featuredProductsTitle[language]}</h2>
+              <p>{t.featuredProductsDesc[language]}</p>
+            </div>
+            <Link to="/products" className="home-section-link">
+              {t.viewAllProducts[language]}
+            </Link>
+          </div>
+
+          {featuredLoading ? (
+            <div className="home-featured-grid home-featured-loading-grid" aria-label={t.featuredLoading[language]}>
+              {featuredLoadingCards.map((item) => (
+                <div key={item} className="home-featured-card home-featured-card-loading" aria-hidden="true">
+                  <div className="home-featured-media">
+                    <span className="loading-image" />
+                  </div>
+                  <div className="home-featured-body">
+                    <span className="loading-line loading-line-xs" />
+                    <h3 className="loading-line loading-line-md" />
+                    <p className="loading-text" />
+                    <div className="home-featured-footer">
+                      <strong className="loading-price" />
+                      <small className="loading-line loading-line-xs" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : featuredError ? (
+            <div className="home-featured-status">{t.featuredError[language]}</div>
+          ) : visibleFeaturedProducts.length === 0 ? (
+            <div className="home-featured-status">{t.featuredEmpty[language]}</div>
+          ) : (
+            <div className="home-featured-grid reveal reveal-delay-1">
+              {visibleFeaturedProducts.map((product) => {
+                const imageUrl = getImageUrl(product.image);
+                const hasImage = imageUrl && !imageErrors[product.id];
+                const inStock = Number(product.stock) > 0;
+
+                return (
+                  <Link key={product.id} to={`/products/${product.id}`} className="home-featured-card">
+                    <div className="home-featured-media">
+                      {hasImage ? (
+                        <img
+                          src={imageUrl}
+                          alt={product.name}
+                          onError={() => setImageErrors((current) => ({ ...current, [product.id]: true }))}
+                        />
+                      ) : (
+                        <div className="home-featured-fallback">{getInitials(product.name)}</div>
+                      )}
+                      <span className={`home-featured-stock ${inStock ? 'in' : 'out'}`}>
+                        {inStock ? t.featuredInStock[language] : t.featuredOutOfStock[language]}
+                      </span>
+                    </div>
+                    <div className="home-featured-body">
+                      <span>{product.category?.name || t.featuredCategory[language]}</span>
+                      <h3>{product.name}</h3>
+                      <p>{product.description || t.featuredNoDescription[language]}</p>
+                      <div className="home-featured-footer">
+                        <strong>${Number(product.price || 0).toFixed(2)}</strong>
+                        <small>{t.viewProduct[language]}</small>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="home-how-section">
+        <div className="home-how-layout mx-auto max-w-6xl px-4 py-16">
+          <div className="home-section-heading home-section-heading-left reveal">
+            <div>
+              <span>{t.howKicker[language]}</span>
+              <h2>{t.howTitle[language]}</h2>
+              <p>{t.howDesc[language]}</p>
+            </div>
+            <Link to="/products" className="home-section-link home-how-link">
+              {t.howCta[language]}
+            </Link>
+          </div>
+
+          <div className="home-how-steps reveal reveal-delay-1">
+            {howSteps.map((step) => (
+              <article key={step.step} className="home-how-step">
+                <div className="home-how-index">{step.step}</div>
+                <div>
+                  <h3>{t[step.titleKey][language]}</h3>
+                  <p>{t[step.descKey][language]}</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import { useLanguage } from '../context/LanguageContext';
 import translations from '../translations';
@@ -8,9 +8,40 @@ export default function Header() {
   const navigate = useNavigate();
   const { language, toggleLanguage } = useLanguage();
   const t = translations;
+  const mobileNavItems = [
+    {
+      to: '/',
+      label: t.header.home[language],
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 10.8 12 4l8 6.8V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      to: '/products',
+      label: t.header.products[language],
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M5 7.5 12 4l7 3.5v9L12 20l-7-3.5v-9Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+          <path d="m5 7.5 7 3.5 7-3.5M12 11v9" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      to: '/about',
+      label: t.header.about[language],
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 17v-6M12 8h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+  ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--stroke)] bg-white/85 backdrop-blur">
+    <>
+      <header className="public-header sticky top-0 z-40 border-b border-[var(--stroke)] bg-white/85 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <Link to="/" className="flex items-center gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/80 bg-white p-1 shadow-sm">
@@ -79,5 +110,20 @@ export default function Header() {
         </div>
       </nav>
     </header>
+
+      <nav className="mobile-app-tabs" aria-label="Mobile navigation">
+        {mobileNavItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            className={({ isActive }) => `mobile-app-tab ${isActive ? 'active' : ''}`}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </>
   );
 }
