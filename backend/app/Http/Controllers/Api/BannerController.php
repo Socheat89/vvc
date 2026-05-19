@@ -131,17 +131,39 @@ class BannerController extends Controller
     {
         $directory = public_path('uploads/banners');
 
+        // Ensure directory exists with proper permissions
         if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
+            if (!mkdir($directory, 0777, true)) {
+                throw new \Exception('Failed to create uploads/banners directory.');
+            }
         }
 
-        $path = $directory . DIRECTORY_SEPARATOR . 'banner-' . Str::uuid() . '.webp';
-
-        if (!$this->convertImagePathToWebp($file->getRealPath(), $path)) {
-            abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Unable to convert image to WebP.');
+        // Make sure directory is writable
+        if (!is_writable($directory)) {
+            if (!chmod($directory, 0777)) {
+                throw new \Exception('uploads/banners directory is not writable.');
+            }
         }
 
-        return $this->publicBannerImageUrl($path);
+        $filename = 'banner-' . Str::uuid();
+        
+        // Try to save as WebP
+        $webpPath = $directory . DIRECTORY_SEPARATOR . $filename . '.webp';
+        if ($this->convertImagePathToWebp($file->getRealPath(), $webpPath)) {
+            chmod($webpPath, 0644);
+            return url('index.php/uploads/banners/' . $filename . '.webp');
+        }
+        
+        // Fallback: copy original file if WebP conversion fails
+        $originalExtension = strtolower($file->getClientOriginalExtension());
+        $fallbackPath = $directory . DIRECTORY_SEPARATOR . $filename . '.' . $originalExtension;
+        
+        if ($file->copy($directory, $filename . '.' . $originalExtension)) {
+            chmod($fallbackPath, 0644);
+            return url('index.php/uploads/banners/' . $filename . '.' . $originalExtension);
+        }
+        
+        throw new \Exception('Unable to save image file.');
     }
 
     private function convertImagePathToWebp(string $source, string $destination): bool
@@ -177,7 +199,8 @@ class BannerController extends Controller
 
     private function publicBannerImageUrl(string $path): string
     {
-        return url('uploads/banners/' . basename($path));
+        $filename = basename($path);
+        return url('index.php/uploads/banners/' . $filename);
     }
 
     private function deleteLocalBannerImage(?string $imageUrl): void

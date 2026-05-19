@@ -24,6 +24,26 @@ const extractUploadPath = (value) => {
   return '';
 };
 
+const getBannerImageUrl = (image) => {
+  if (!image) return '';
+  const imageStr = String(image).trim();
+  if (!imageStr) return '';
+  
+  // If it's already a data URL or blob, return as-is
+  if (/^(data:|blob:)/i.test(imageStr)) return imageStr;
+  
+  // If it's a full URL, return as-is
+  if (/^https?:\/\//i.test(imageStr)) return imageStr;
+  
+  // Extract just the relative path (everything after uploads/)
+  let relativePath = imageStr;
+  if (imageStr.includes('uploads/')) {
+    relativePath = imageStr.substring(imageStr.indexOf('uploads/'));
+  }
+  
+  return `https://app.vvc.asia/vvc_web/vvc/backend/public/${relativePath}`;
+};
+
 const getImageUrl = (image) => {
   if (!image) return '';
   const rawImage = String(image).trim().replace(/\\/g, '/');
@@ -202,7 +222,7 @@ export default function Home() {
                   <div className="home-poster-content">
                     <div className="home-poster-art reveal" aria-hidden="true">
                       <div className={`home-poster-banner ${slide.image ? '' : 'home-poster-banner-empty'}`}>
-                        {slide.image && <img src={slide.image} alt="" />}
+                        {slide.image && <img src={getBannerImageUrl(slide.image)} alt={slide.title || ''} />}
                       </div>
                     </div>
                   </div>
