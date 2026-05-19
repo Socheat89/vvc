@@ -77,6 +77,22 @@ const translations = {
       kh: 'លក្ខខណ្ឌ',
       en: 'Terms',
     },
+    socialTitle: {
+      kh: 'បណ្ដាញសង្គម',
+      en: 'Social media',
+    },
+    socialDesc: {
+      kh: 'តាមដានព័ត៌មានថ្មីៗ និងទំនាក់ទំនងជាមួយយើង។',
+      en: 'Follow updates and connect with us.',
+    },
+    telegram: {
+      kh: 'Telegram',
+      en: 'Telegram',
+    },
+    facebook: {
+      kh: 'Facebook',
+      en: 'Facebook',
+    },
     copyright: {
       kh: '© 2024 VVC. បង្កើតសម្រាប់ដំណើរផលិតផលសម័យថ្មី។',
       en: '© 2024 VVC. Crafted for modern product journeys.',
@@ -228,6 +244,94 @@ const translations = {
     feature3Desc: {
       kh: 'ជួយឆ្លើយសំណួរអំពីការប្រើប្រាស់ ការថែទាំ និងភាពសមរម្យសម្រាប់តម្រូវការរបស់អ្នក។',
       en: 'Helpful answers around use, care, and whether the product fits the customer need.',
+    },
+    featuredProductsKicker: {
+      kh: 'ផលិតផលណែនាំ',
+      en: 'Featured Products',
+    },
+    featuredProductsTitle: {
+      kh: 'ផលិតផលថ្មីៗដែលគួរមើល',
+      en: 'Fresh picks worth exploring',
+    },
+    featuredProductsDesc: {
+      kh: 'មើលជម្រើសថ្មីៗពី VVC ជាមួយព័ត៌មានសំខាន់ៗដែលជួយឲ្យការសម្រេចចិត្តកាន់តែងាយស្រួល។',
+      en: 'Browse recent VVC products with the essential details that make choosing easier.',
+    },
+    viewAllProducts: {
+      kh: 'មើលផលិតផលទាំងអស់',
+      en: 'View all products',
+    },
+    featuredLoading: {
+      kh: 'កំពុងផ្ទុកផលិតផល...',
+      en: 'Loading products...',
+    },
+    featuredError: {
+      kh: 'មិនអាចផ្ទុកផលិតផលបានទេ',
+      en: 'Unable to load products right now.',
+    },
+    featuredEmpty: {
+      kh: 'មិនទាន់មានផលិតផលសម្រាប់បង្ហាញ',
+      en: 'No products to show yet.',
+    },
+    featuredCategory: {
+      kh: 'មិនមានប្រភេទ',
+      en: 'Uncategorized',
+    },
+    featuredNoDescription: {
+      kh: 'មិនមានការពិពណ៌នា',
+      en: 'No description available',
+    },
+    featuredInStock: {
+      kh: 'មានស្តុក',
+      en: 'In stock',
+    },
+    featuredOutOfStock: {
+      kh: 'អស់ស្តុក',
+      en: 'Out of stock',
+    },
+    viewProduct: {
+      kh: 'មើលផលិតផល',
+      en: 'View product',
+    },
+    howKicker: {
+      kh: 'របៀបប្រើប្រាស់',
+      en: 'How It Works',
+    },
+    howTitle: {
+      kh: 'ពីការស្វែងរកទៅការជ្រើសរើស',
+      en: 'From browsing to choosing',
+    },
+    howDesc: {
+      kh: 'ដំណើរខ្លីៗដែលជួយឲ្យអ្នកយល់ពីផលិតផល មើលព័ត៌មានចាំបាច់ និងជ្រើសរើសដោយមានទំនុកចិត្ត។',
+      en: 'A short flow that helps people understand each product, check the essentials, and choose with confidence.',
+    },
+    howStep1Title: {
+      kh: 'ស្វែងរកផលិតផល',
+      en: 'Browse products',
+    },
+    howStep1Desc: {
+      kh: 'ចាប់ផ្តើមពីបញ្ជីផលិតផល ឬប្រភេទដែលសមនឹងអ្វីដែលអ្នកកំពុងស្វែងរក។',
+      en: 'Start with the catalog or a category that matches what you are looking for.',
+    },
+    howStep2Title: {
+      kh: 'អានអត្តសញ្ញាណផលិតផល',
+      en: 'Read the product passport',
+    },
+    howStep2Desc: {
+      kh: 'មើលរឿងរ៉ាវ គុណភាព តម្លៃ ស្តុក និងព័ត៌មានសំខាន់ៗមុនពេលសម្រេចចិត្ត។',
+      en: 'Review the story, quality, price, stock, and key details before deciding.',
+    },
+    howStep3Title: {
+      kh: 'ជ្រើសរើសដោយទំនុកចិត្ត',
+      en: 'Choose with confidence',
+    },
+    howStep3Desc: {
+      kh: 'ប្រៀបធៀបព័ត៌មាន និងបន្តទៅទំព័រផលិតផល ដើម្បីមើលលម្អិត ឬរក្សាទុកជម្រើសរបស់អ្នក។',
+      en: 'Compare the details and continue to the product page to view more or reserve your choice.',
+    },
+    howCta: {
+      kh: 'ចាប់ផ្តើមមើលផលិតផល',
+      en: 'Start browsing',
     },
   },
 
@@ -532,6 +636,10 @@ const translations = {
     noMatches: {
       kh: 'មិនមានផលិតផលត្រូវនឹងការស្វែងរក',
       en: 'No products match your search',
+    },
+    emptyHelp: {
+      kh: 'សាកល្បងប្ដូរពាក្យស្វែងរក ប្រភេទ ឬស្ថានភាពស្តុក ដើម្បីរកមើលផលិតផលផ្សេងទៀត។',
+      en: 'Try changing your search, category, or stock filters to discover more products.',
     },
     noDescription: {
       kh: 'មិនមានការពិពណ៌នា',

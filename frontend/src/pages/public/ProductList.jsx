@@ -4,7 +4,8 @@ import { categoryService, productService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
 
-const PER_PAGE = 6;
+const DESKTOP_PER_PAGE = 6;
+const MOBILE_PER_PAGE = 4;
 const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
 const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
 
@@ -51,6 +52,9 @@ const getInitials = (name = '') => {
   return (words[0]?.[0] || 'V') + (words[1]?.[0] || 'V');
 };
 
+const loadingCards = Array.from({ length: 6 }, (_, index) => index);
+const loadingCategories = Array.from({ length: 5 }, (_, index) => index);
+
 export default function ProductList() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -62,12 +66,25 @@ export default function ProductList() {
   const [stockFilter, setStockFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isMobileCatalog, setIsMobileCatalog] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
   const { language } = useLanguage();
   const t = translations.productList;
+  const nav = translations.header;
+  const perPage = isMobileCatalog ? MOBILE_PER_PAGE : DESKTOP_PER_PAGE;
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 640px)');
+    const updateMobileCatalog = () => setIsMobileCatalog(mediaQuery.matches);
+
+    updateMobileCatalog();
+    mediaQuery.addEventListener('change', updateMobileCatalog);
+
+    return () => mediaQuery.removeEventListener('change', updateMobileCatalog);
   }, []);
 
   useEffect(() => {
@@ -188,8 +205,14 @@ export default function ProductList() {
       .slice(0, 5);
   }, [products, searchInput, selectedCategory, stockFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PER_PAGE));
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / perPage));
+  const paginatedProducts = filteredProducts.slice((currentPage - 1) * perPage, currentPage * perPage);
+  const hasActiveFilters =
+    Boolean(searchInput.trim()) ||
+    Boolean(searchTerm) ||
+    selectedCategory !== 'all' ||
+    stockFilter !== 'all' ||
+    sortBy !== 'newest';
 
   const handleSearch = () => {
     setSearchTerm(searchInput.trim());
@@ -203,12 +226,128 @@ export default function ProductList() {
     setSortBy('newest');
   };
 
-  if (loading) return <div className="mx-auto max-w-6xl px-4 py-16">{t.loading[language]}</div>;
+  const renderCategoryPanel = (extraClassName = '') => (
+    <aside className={`product-category-panel ${extraClassName}`.trim()}>
+      <div className="product-panel-title">{t.categories[language]}</div>
+      <button
+        type="button"
+        className={`product-category-button ${selectedCategory === 'all' ? 'active' : ''}`}
+        onClick={() => setSelectedCategory('all')}
+      >
+        <span>{t.allCategories[language]}</span>
+        <strong>{products.length}</strong>
+      </button>
+      {categoryOptions.map((category) => (
+        <button
+          key={category.id}
+          type="button"
+          className={`product-category-button ${selectedCategory === category.id ? 'active' : ''}`}
+          onClick={() => setSelectedCategory(category.id)}
+        >
+          <span>{category.name}</span>
+          <strong>{category.count}</strong>
+        </button>
+      ))}
+      <button type="button" className="product-reset-button" onClick={resetFilters}>
+        {t.reset[language]}
+      </button>
+    </aside>
+  );
+
+  if (loading) {
+    return (
+      <div className="product-page">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <div className="product-breadcrumb product-loading-breadcrumb" aria-hidden="true">
+            <span className="loading-line loading-line-sm" />
+            <span className="loading-dot" />
+            <span className="loading-line loading-line-xs" />
+          </div>
+
+          <section className="product-list-hero">
+            <div className="product-loading-copy" aria-hidden="true">
+              <span className="loading-pill" />
+              <span className="loading-title" />
+              <span className="loading-text" />
+              <span className="loading-text loading-text-short" />
+            </div>
+
+            <div className="product-list-summary-card product-loading-summary" aria-hidden="true">
+              <div>
+                <span className="loading-line loading-line-xs" />
+                <strong className="loading-number" />
+              </div>
+              <div>
+                <span className="loading-line loading-line-xs" />
+                <strong className="loading-number" />
+              </div>
+              <div>
+                <span className="loading-line loading-line-xs" />
+                <strong className="loading-number" />
+              </div>
+            </div>
+          </section>
+
+          <div className="product-catalog-layout">
+            <aside className="product-category-panel product-loading-panel" aria-hidden="true">
+              <span className="loading-line loading-line-sm" />
+              {loadingCategories.map((item) => (
+                <span key={item} className="loading-category-row" />
+              ))}
+            </aside>
+
+            <section className="product-catalog-main" aria-label={t.loading[language]}>
+              <div className="product-sticky-filters">
+                <div className="product-search-panel product-loading-filter" aria-hidden="true">
+                  <span className="loading-line loading-line-sm" />
+                  <span className="loading-input" />
+                  <div className="product-filter-row">
+                    <span className="loading-input" />
+                    <span className="loading-input" />
+                    <span className="loading-button" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="product-results-bar" aria-hidden="true">
+                <span className="loading-line loading-line-sm" />
+                <span className="loading-chip" />
+              </div>
+
+              <div className="product-grid" aria-hidden="true">
+                {loadingCards.map((item) => (
+                  <div key={item} className="product-card product-card-skeleton">
+                    <div className="product-card-media">
+                      <span className="loading-image" />
+                    </div>
+                    <div className="product-card-body">
+                      <span className="loading-line loading-line-xs" />
+                      <span className="loading-line loading-line-md" />
+                      <div className="product-card-footer">
+                        <span className="loading-price" />
+                        <small className="loading-line loading-line-xs" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (error) return <div className="mx-auto max-w-6xl px-4 py-16 text-yellow-700">{error}</div>;
 
   return (
     <div className="product-page">
       <div className="mx-auto max-w-6xl px-4 py-14">
+        <nav className="product-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/">{nav.home[language]}</Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{nav.products[language]}</span>
+        </nav>
+
         <section className="product-list-hero">
           <div>
             <span className="pill">{t.tagline[language]}</span>
@@ -216,130 +355,141 @@ export default function ProductList() {
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">{t.desc[language]}</p>
           </div>
 
-          <div className="product-search-panel">
-            <label htmlFor="product-search">{t.searchLabel[language]}</label>
-            <div className="product-search-row">
-              <input
-                id="product-search"
-                type="search"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') handleSearch();
-                }}
-                placeholder={t.searchPlaceholder[language]}
-              />
-              <button type="button" className="product-search-button" onClick={handleSearch}>
-                {t.search[language]}
-              </button>
+          <div className="product-list-summary-card">
+            <div>
+              <span>{nav.products[language]}</span>
+              <strong>{products.length}</strong>
             </div>
-
-            {searchInput.trim() && (
-              <div className="product-search-results">
-                <div className="product-search-results-title">
-                  <span>{t.quickResults[language]}</span>
-                  <strong>{searchSuggestions.length}</strong>
-                </div>
-
-                {searchSuggestions.length > 0 ? (
-                  <div className="product-search-results-list">
-                    {searchSuggestions.map((product) => {
-                      const imageUrl = getImageUrl(product.image);
-                      const hasImage = imageUrl && !imageErrors[`suggestion-${product.id}`];
-
-                      return (
-                        <Link
-                          key={product.id}
-                          to={`/products/${product.id}`}
-                          className="product-search-result-item"
-                        >
-                          <div className="product-search-result-image">
-                            {hasImage ? (
-                              <img
-                                src={imageUrl}
-                                alt={product.name}
-                                onError={() => setImageErrors((current) => ({
-                                  ...current,
-                                  [`suggestion-${product.id}`]: true,
-                                }))}
-                              />
-                            ) : (
-                              <span>{getInitials(product.name)}</span>
-                            )}
-                          </div>
-                          <div>
-                            <strong>{product.name}</strong>
-                            <p>{product.category?.name || t.category[language]}</p>
-                          </div>
-                          <small>${Number(product.price || 0).toFixed(2)}</small>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="product-search-no-results">{t.noMatches[language]}</div>
-                )}
-              </div>
-            )}
-
-            <div className="product-filter-row">
-              <select value={stockFilter} onChange={(event) => setStockFilter(event.target.value)}>
-                <option value="all">{t.allStock[language]}</option>
-                <option value="in">{t.inStockOnly[language]}</option>
-                <option value="out">{t.outOfStockOnly[language]}</option>
-              </select>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-                <option value="newest">{t.newestFirst[language]}</option>
-                <option value="name">{t.nameAsc[language]}</option>
-                <option value="price-low">{t.priceLow[language]}</option>
-                <option value="price-high">{t.priceHigh[language]}</option>
-              </select>
-              <button type="button" className="product-filter-button" onClick={() => setCurrentPage(1)}>
-                {t.filter[language]}
-              </button>
+            <div>
+              <span>{t.categories[language]}</span>
+              <strong>{categoryOptions.length}</strong>
+            </div>
+            <div>
+              <span>{t.perPage[language]}</span>
+              <strong>{perPage}</strong>
             </div>
           </div>
         </section>
 
         <div className="product-catalog-layout">
-          <aside className="product-category-panel">
-            <div className="product-panel-title">{t.categories[language]}</div>
-            <button
-              type="button"
-              className={`product-category-button ${selectedCategory === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('all')}
-            >
-              <span>{t.allCategories[language]}</span>
-              <strong>{products.length}</strong>
-            </button>
-            {categoryOptions.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                className={`product-category-button ${selectedCategory === category.id ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                <span>{category.name}</span>
-                <strong>{category.count}</strong>
-              </button>
-            ))}
-            <button type="button" className="product-reset-button" onClick={resetFilters}>
-              {t.reset[language]}
-            </button>
-          </aside>
+          {renderCategoryPanel('product-category-panel-desktop')}
 
           <section className="product-catalog-main">
+            <div className="product-sticky-filters">
+              <div className="product-search-panel">
+                <label htmlFor="product-search">{t.searchLabel[language]}</label>
+                <div className="product-search-row">
+                  <input
+                    id="product-search"
+                    type="search"
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') handleSearch();
+                    }}
+                    placeholder={t.searchPlaceholder[language]}
+                  />
+                  <button type="button" className="product-search-button" onClick={handleSearch}>
+                    {t.search[language]}
+                  </button>
+                </div>
+
+                {searchInput.trim() && (
+                  <div className="product-search-results">
+                    <div className="product-search-results-title">
+                      <span>{t.quickResults[language]}</span>
+                      <strong>{searchSuggestions.length}</strong>
+                    </div>
+
+                    {searchSuggestions.length > 0 ? (
+                      <div className="product-search-results-list">
+                        {searchSuggestions.map((product) => {
+                          const imageUrl = getImageUrl(product.image);
+                          const hasImage = imageUrl && !imageErrors[`suggestion-${product.id}`];
+
+                          return (
+                            <Link
+                              key={product.id}
+                              to={`/products/${product.id}`}
+                              className="product-search-result-item"
+                            >
+                              <div className="product-search-result-image">
+                                {hasImage ? (
+                                  <img
+                                    src={imageUrl}
+                                    alt={product.name}
+                                    onError={() => setImageErrors((current) => ({
+                                      ...current,
+                                      [`suggestion-${product.id}`]: true,
+                                    }))}
+                                  />
+                                ) : (
+                                  <span>{getInitials(product.name)}</span>
+                                )}
+                              </div>
+                              <div>
+                                <strong>{product.name}</strong>
+                                <p>{product.category?.name || t.category[language]}</p>
+                              </div>
+                              <small>${Number(product.price || 0).toFixed(2)}</small>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="product-search-no-results">{t.noMatches[language]}</div>
+                    )}
+                  </div>
+                )}
+
+                <div className="product-filter-row">
+                  <select value={stockFilter} onChange={(event) => setStockFilter(event.target.value)}>
+                    <option value="all">{t.allStock[language]}</option>
+                    <option value="in">{t.inStockOnly[language]}</option>
+                    <option value="out">{t.outOfStockOnly[language]}</option>
+                  </select>
+                  <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                    <option value="newest">{t.newestFirst[language]}</option>
+                    <option value="name">{t.nameAsc[language]}</option>
+                    <option value="price-low">{t.priceLow[language]}</option>
+                    <option value="price-high">{t.priceHigh[language]}</option>
+                  </select>
+                  <button type="button" className="product-filter-button" onClick={() => setCurrentPage(1)}>
+                    {t.filter[language]}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="product-results-bar">
               <div>
                 <strong>{filteredProducts.length}</strong> {t.results[language]}
               </div>
               <div className="product-per-page">
-                {t.perPage[language]}: <strong>{PER_PAGE}</strong>
+                {t.perPage[language]}: <strong>{perPage}</strong>
               </div>
             </div>
 
+            {renderCategoryPanel('product-category-panel-mobile')}
+
             {filteredProducts.length === 0 ? (
-              <div className="product-empty-state">{t.noMatches[language]}</div>
+              <div className="product-empty-state">
+                <div className="product-empty-icon" aria-hidden="true">
+                  <span>VVC</span>
+                </div>
+                <h2>{products.length === 0 ? t.noProducts[language] : t.noMatches[language]}</h2>
+                <p>{t.emptyHelp[language]}</p>
+                <div className="product-empty-actions">
+                  {hasActiveFilters && (
+                    <button type="button" className="product-search-button" onClick={resetFilters}>
+                      {t.reset[language]}
+                    </button>
+                  )}
+                  <Link to="/" className="product-filter-button">
+                    {nav.home[language]}
+                  </Link>
+                </div>
+              </div>
             ) : (
               <>
                 <div className="product-grid">
@@ -368,7 +518,6 @@ export default function ProductList() {
                             {product.category?.name || t.category[language]}
                           </div>
                           <h3>{product.name}</h3>
-                          <p>{product.description || t.noDescription[language]}</p>
                           <div className="product-card-footer">
                             <span>${Number(product.price || 0).toFixed(2)}</span>
                             <small>{t.view[language]}</small>

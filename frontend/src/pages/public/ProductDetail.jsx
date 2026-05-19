@@ -50,6 +50,8 @@ const getInitials = (name = '') => {
   return (words[0]?.[0] || 'V') + (words[1]?.[0] || 'V');
 };
 
+const loadingFacts = Array.from({ length: 4 }, (_, index) => index);
+
 export default function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -60,6 +62,7 @@ export default function ProductDetail() {
   const [relatedImageErrors, setRelatedImageErrors] = useState({});
   const { language } = useLanguage();
   const t = translations.productDetail;
+  const nav = translations.header;
 
   useEffect(() => {
     fetchProduct();
@@ -91,8 +94,7 @@ export default function ProductDetail() {
             return String(itemCategoryId) === String(currentCategoryId);
           }
           return currentCategoryName && item.category?.name === currentCategoryName;
-        })
-        .slice(0, 4);
+        });
 
       setProduct(productData);
       setRelatedProducts(recommendations);
@@ -107,7 +109,61 @@ export default function ProductDetail() {
     }
   };
 
-  if (loading) return <div className="mx-auto max-w-6xl px-4 py-16">{t.loading[language]}</div>;
+  if (loading) {
+    return (
+      <div className="product-detail-page">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <div className="product-breadcrumb product-detail-breadcrumb" aria-hidden="true">
+            <span className="loading-line loading-line-sm" />
+            <span className="loading-dot" />
+            <span className="loading-line loading-line-xs" />
+            <span className="loading-dot" />
+            <span className="loading-line loading-line-md" />
+          </div>
+
+          <span className="product-detail-back product-detail-back-loading" aria-hidden="true" />
+
+          <section className="product-detail-shell" aria-label={t.loading[language]}>
+            <div className="product-detail-media-card product-detail-media-card-loading" aria-hidden="true">
+              <div className="product-detail-media">
+                <span className="loading-image loading-image-large" />
+              </div>
+              <div className="product-detail-media-caption">
+                <span className="loading-line loading-line-xs" />
+                <strong className="loading-line loading-line-xs" />
+              </div>
+            </div>
+
+            <div className="product-detail-content product-detail-content-loading" aria-hidden="true">
+              <span className="loading-pill" />
+              <span className="loading-title loading-title-wide" />
+              <div className="product-detail-price-row">
+                <span className="loading-price loading-price-lg" />
+                <strong className="loading-chip" />
+              </div>
+              <div className="product-detail-summary">
+                <span className="loading-line loading-line-md" />
+                <span className="loading-text" />
+                <span className="loading-text loading-text-short" />
+              </div>
+              <div className="product-detail-grid">
+                {loadingFacts.map((item) => (
+                  <div key={item} className="product-detail-fact">
+                    <span className="loading-line loading-line-xs" />
+                    <strong className="loading-line loading-line-sm" />
+                  </div>
+                ))}
+              </div>
+              <div className="product-detail-action-row">
+                <span className="loading-button" />
+                <span className="loading-button loading-button-light" />
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
   if (error) return <div className="mx-auto max-w-6xl px-4 py-16 text-yellow-700">{error}</div>;
   if (!product) return <div className="mx-auto max-w-6xl px-4 py-16">{t.notFound[language]}</div>;
 
@@ -124,6 +180,14 @@ export default function ProductDetail() {
   return (
     <div className="product-detail-page">
       <div className="mx-auto max-w-6xl px-4 py-12">
+        <nav className="product-breadcrumb product-detail-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/">{nav.home[language]}</Link>
+          <span aria-hidden="true">/</span>
+          <Link to="/products">{nav.products[language]}</Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{product.name}</span>
+        </nav>
+
         <Link to="/products" className="product-detail-back">
           {t.backToProducts[language]}
         </Link>
