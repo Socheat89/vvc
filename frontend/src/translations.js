@@ -821,6 +821,10 @@ const translations = {
       kh: 'ប្រភេទ',
       en: 'Categories',
     },
+    banners: {
+      kh: 'ផ្ទាំងថត',
+      en: 'Banners',
+    },
     settings: {
       kh: 'ការកំណត់',
       en: 'Settings',
@@ -1644,6 +1648,134 @@ const translations = {
     of: {
       kh: 'នៃ',
       en: 'of',
+    },
+  },
+
+  // ===== MANAGE BANNERS =====
+  manageBanners: {
+    eyebrow: {
+      kh: 'គ្រប់គ្រងការផ្សាយ',
+      en: 'Display Management',
+    },
+    title: {
+      kh: 'គ្រប់គ្រងផ្ទាំងថត',
+      en: 'Manage Banners',
+    },
+    subtitle: {
+      kh: 'កែសម្រួលផ្ទាំងថតលើទំព័រដើម និងដឹកនាំអតិថិជនឆ្ពោះទៅកាន់ផលិតផល។',
+      en: 'Manage home page banners and guide customers to featured products.',
+    },
+    addBanner: {
+      kh: 'បន្ថែមផ្ទាំងថត',
+      en: 'Add Banner',
+    },
+    addNewBanner: {
+      kh: 'បន្ថែមផ្ទាំងថតថ្មី',
+      en: 'Add New Banner',
+    },
+    editBanner: {
+      kh: 'កែសម្រួលផ្ទាំងថត',
+      en: 'Edit Banner',
+    },
+    title: {
+      kh: 'ចំណងជើង',
+      en: 'Title',
+    },
+    titlePlaceholder: {
+      kh: 'ឯកសារច្ចាប់ដោយឈ្មោះលម្អិត (ឯកត្ត)',
+      en: 'Enter banner title (optional)',
+    },
+    tone: {
+      kh: '톤ពណ៌',
+      en: 'Tone',
+    },
+    image: {
+      kh: 'រូបភាព',
+      en: 'Image',
+    },
+    chooseImage: {
+      kh: 'ជ្រើសរើលរូបភាព',
+      en: 'Choose Image',
+    },
+    changeImage: {
+      kh: 'ប្តូររូបភាព',
+      en: 'Change Image',
+    },
+    imageHelp: {
+      kh: 'ជ្រើសរើស JPG, PNG, WebP, GIF, BMP ឬ AVIF។ ប្រព័ន្ធនឹងបម្លែងទៅជា WebP ដោយស្វ័យប្រវត្តិ។',
+      en: 'Choose JPG, PNG, WebP, GIF, BMP, or AVIF. The system will convert it to WebP automatically.',
+    },
+    active: {
+      kh: 'សកម្ម',
+      en: 'Active',
+    },
+    inactive: {
+      kh: 'អសកម្ម',
+      en: 'Inactive',
+    },
+    edit: {
+      kh: 'កែសម្រួល',
+      en: 'Edit',
+    },
+    delete: {
+      kh: 'លុប',
+      en: 'Delete',
+    },
+    deleting: {
+      kh: 'កំពុងលុប...',
+      en: 'Deleting...',
+    },
+    cancel: {
+      kh: 'បោះបង់',
+      en: 'Cancel',
+    },
+    create: {
+      kh: 'បង្កើត',
+      en: 'Create',
+    },
+    update: {
+      kh: 'កែប្រែ',
+      en: 'Update',
+    },
+    saving: {
+      kh: 'កំពុងរក្សាទុក...',
+      en: 'Saving...',
+    },
+    deleteConfirm: {
+      kh: 'តើអ្នកប្រាកដក្នុងការលុបផ្ទាំងថតនេះ?',
+      en: 'Are you sure you want to delete this banner?',
+    },
+    deleteConfirmDesc: {
+      kh: 'សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។',
+      en: 'This action cannot be undone.',
+    },
+    noBanners: {
+      kh: 'មិនទាន់មានផ្ទាំងថត',
+      en: 'No banners yet',
+    },
+    noBannersDesc: {
+      kh: 'បង្កើតផ្ទាំងថតដំបូងដើម្បីផ្សាយលើទំព័របឋម។',
+      en: 'Create your first banner to display on the home page.',
+    },
+    loadFailed: {
+      kh: 'បរាជ័យក្នុងការផ្ទុកទិន្នន័យ',
+      en: 'Failed to load data',
+    },
+    saveFailed: {
+      kh: 'បរាជ័យក្នុងការរក្សាទុកផ្ទាំងថត',
+      en: 'Failed to save banner',
+    },
+    deleteFailed: {
+      kh: 'បរាជ័យក្នុងការលុបផ្ទាំងថត',
+      en: 'Failed to delete banner',
+    },
+    toneRequired: {
+      kh: 'ត្រូវតែជ្រើសរើលពណ៌',
+      en: 'Tone is required',
+    },
+    untitled: {
+      kh: 'មិនមានចំណងជើង',
+      en: 'Untitled',
     },
   },
 

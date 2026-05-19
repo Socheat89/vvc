@@ -12,6 +12,7 @@ import ManageProducts from './pages/admin/ManageProducts';
 import ManageCategories from './pages/admin/ManageCategories';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageTranslations from './pages/admin/ManageTranslations';
+import ManageBanners from './pages/admin/ManageBanners';
 import ProtectedRoute from './components/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
 
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="products" element={<ManageProducts />} />
             <Route path="categories" element={<ManageCategories />} />
             <Route path="users" element={<ManageUsers />} />
+            <Route path="banners" element={<ManageBanners />} />
             <Route path="translations" element={<ManageTranslations />} />
           </Route>
 

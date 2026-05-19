@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google to External Backup Report</title>
+    <!-- ប្រើប្រាស់ Tailwind CSS សម្រាប់ UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Suwannaphum:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Suwannaphum', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+
+    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8 border-b pb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">របាយការណ៍ Backup ទិន្នន័យ</h1>
+                <p class="text-gray-500 text-sm mt-1">Google Workspace ទៅកាន់ External Storage</p>
+            </div>
+            <button onclick="downloadCSV()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+                ទាញយកជា CSV
+            </button>
+        </div>
+
+        <!-- Data Entry Form -->
+        <div class="bg-gray-50 p-6 rounded-lg mb-8 border border-gray-200">
+            <h2 class="text-lg font-bold text-gray-700 mb-4">បញ្ចូលទិន្នន័យថ្មី</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                
+                <div class="col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">កាលបរិច្ឆេទ</label>
+                    <input type="date" id="dateInput" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="col-span-1 md:col-span-2 lg:col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ប្រភព (Source)</label>
+                    <select id="sourceInput" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Google Drive">Google Drive</option>
+                        <option value="Google Photos">Google Photos</option>
+                        <option value="Gmail">Gmail</option>
+                    </select>
+                </div>
+
+                <div class="col-span-1 md:col-span-2 lg:col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ទិសដៅ (Destination)</label>
+                    <input type="text" id="destInput" placeholder="ឧ. HDD 1, NAS..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ទំហំ (GB)</label>
+                    <input type="number" id="sizeInput" placeholder="0.00" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ស្ថានភាព</label>
+                    <select id="statusInput" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="ជោគជ័យ">ជោគជ័យ</option>
+                        <option value="បរាជ័យ">បរាជ័យ</option>
+                        <option value="កំពុងដំណើរការ">កំពុងដំណើរការ</option>
+                    </select>
+                </div>
+
+                <div class="col-span-1 flex items-end">
+                    <button onclick="addRow()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow transition duration-200">
+                        បញ្ចូលប្រវត្តិ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto rounded-lg border border-gray-200">
+            <table id="reportTable" class="min-w-full bg-white">
+                <thead class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                    <tr>
+                        <th class="py-3 px-6 text-left">កាលបរិច្ឆេទ</th>
+                        <th class="py-3 px-6 text-left">ប្រភព (Source)</th>
+                        <th class="py-3 px-6 text-left">ទិសដៅ (Destination)</th>
+                        <th class="py-3 px-6 text-right">ទំហំ (GB)</th>
+                        <th class="py-3 px-6 text-center">ស្ថានភាព</th>
+                        <th class="py-3 px-6 text-center">សកម្មភាព</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="text-gray-600 text-sm font-light">
+                    <!-- Data will be appended here -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        // កំណត់កាលបរិច្ឆេទថ្ងៃនេះជា default ពេលបើកមក
+        document.getElementById('dateInput').valueAsDate = new Date();
+
+        function addRow() {
+            // ទាញយកតម្លៃពី input
+            const date = document.getElementById('dateInput').value;
+            const source = document.getElementById('sourceInput').value;
+            const dest = document.getElementById('destInput').value;
+            const size = document.getElementById('sizeInput').value;
+            const status = document.getElementById('statusInput').value;
+
+            // ត្រួតពិនិត្យថាមានទិន្នន័យគ្រប់គ្រាន់ឬទេ
+            if (!date || !dest || !size) {
+                alert('សូមបំពេញព័ត៌មានឱ្យបានគ្រប់គ្រាន់ ជាពិសេស ទិសដៅ និង ទំហំ!');
+                return;
+            }
+
+            // កំណត់ពណ៌ Status ទៅតាមលទ្ធផល
+            let statusBadge = '';
+            if(status === 'ជោគជ័យ') {
+                statusBadge = '<span class="bg-green-100 text-green-700 py-1 px-3 rounded-full text-xs font-bold">ជោគជ័យ</span>';
+            } else if(status === 'បរាជ័យ') {
+                statusBadge = '<span class="bg-red-100 text-red-700 py-1 px-3 rounded-full text-xs font-bold">បរាជ័យ</span>';
+            } else {
+                statusBadge = '<span class="bg-yellow-100 text-yellow-700 py-1 px-3 rounded-full text-xs font-bold">កំពុងដំណើរការ</span>';
+            }
+
+            // បង្កើតជួរថ្មី (Row)
+            const tbody = document.getElementById('tableBody');
+            const row = document.createElement('tr');
+            row.className = 'border-b border-gray-200 hover:bg-gray-50';
+            
+            row.innerHTML = `
+                <td class="py-3 px-6 text-left whitespace-nowrap font-medium">${date}</td>
+                <td class="py-3 px-6 text-left">${source}</td>
+                <td class="py-3 px-6 text-left">${dest}</td>
+                <td class="py-3 px-6 text-right font-bold text-gray-700">${parseFloat(size).toFixed(2)} GB</td>
+                <td class="py-3 px-6 text-center">${statusBadge}</td>
+                <td class="py-3 px-6 text-center">
+                    <button onclick="deleteRow(this)" class="text-red-500 hover:text-red-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </td>
+            `;
+
+            // បញ្ចូលជួរទៅក្នុងតារាង
+            tbody.appendChild(row);
+
+            // សម្អាត Form បន្ទាប់ពីបញ្ចូលរួច
+            document.getElementById('destInput').value = '';
+            document.getElementById('sizeInput').value = '';
+        }
+
+        // អនុគមន៍សម្រាប់លុបទិន្នន័យ
+        function deleteRow(btn) {
+            if(confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?')) {
+                const row = btn.parentNode.parentNode;
+                row.parentNode.removeChild(row);
+            }
+        }
+
+        // អនុគមន៍សម្រាប់ទាញយកជា CSV (Excel)
+        function downloadCSV() {
+            const table = document.getElementById('reportTable');
+            let rows = table.querySelectorAll('tr');
+            let csvContent = "";
+
+            // បន្ថែម BOM (Byte Order Mark) ដើម្បីឱ្យ Excel អានអក្សរខ្មែរ (UTF-8) បានត្រឹមត្រូវ
+            csvContent += "\uFEFF";
+
+            rows.forEach((row, index) => {
+                let rowData = [];
+                // យកតែ <th> និង <td> លើកលែងតែ Column ចុងក្រោយ (សកម្មភាព/Action)
+                let cols = row.querySelectorAll('th:not(:last-child), td:not(:last-child)');
+                
+                cols.forEach(col => {
+                    // លុប HTML tags ចេញ (ឧទាហរណ៍ <span> នៅកន្លែង status) យកតែ Text
+                    let text = col.innerText || col.textContent;
+                    // បន្ថែមសញ្ញា "" ការពារកុំឱ្យ Error បើមានសញ្ញាក្បៀស (,) ក្នុង Text
+                    rowData.push('"' + text.replace(/"/g, '""') + '"');
+                });
+
+                csvContent += rowData.join(",") + "\n";
+            });
+
+            // បង្កើត Link សម្រាប់ Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Backup_Report.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

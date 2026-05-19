@@ -4,7 +4,7 @@ import { Autoplay, Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
-import { productService } from '../../services/api';
+import { productService, bannerService } from '../../services/api';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -60,7 +60,9 @@ export default function Home() {
   const { language } = useLanguage();
   const t = translations.home;
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [banners, setBanners] = useState([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [bannersLoading, setBannersLoading] = useState(true);
   const [featuredError, setFeaturedError] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
 
@@ -76,26 +78,59 @@ export default function Home() {
     { step: '03', titleKey: 'howStep3Title', descKey: 'howStep3Desc' },
   ];
 
-  const posterSlides = useMemo(() => [
-    {
-      id: 'intro',
-      tone: 'gold',
-      image: '',
-    },
-    {
-      id: 'meaning',
-      tone: 'paper',
-      image: '',
-    },
-    {
-      id: 'featured',
-      tone: 'ink',
-      image: '',
-    },
-  ], []);
+  const posterSlides = useMemo(() => {
+    // If banners are loaded, use them; otherwise use default structure
+    if (banners.length > 0) {
+      return banners.map((banner) => ({
+        id: banner.id.toString(),
+        tone: banner.tone || 'gold',
+        image: banner.image || '',
+        title: banner.title || '',
+      }));
+    }
+
+    // Default slides when no banners are loaded
+    return [
+      {
+        id: 'intro',
+        tone: 'gold',
+        image: '',
+      },
+      {
+        id: 'meaning',
+        tone: 'paper',
+        image: '',
+      },
+      {
+        id: 'featured',
+        tone: 'ink',
+        image: '',
+      },
+    ];
+  }, [banners]);
 
   useEffect(() => {
     let isMounted = true;
+
+    const fetchData = async () => {
+      try {
+        // Fetch banners
+        const bannersResponse = await bannerService.getAll();
+        if (isMounted) {
+          setBanners(bannersResponse.data.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch banners:', error);
+        if (isMounted) {
+          // Use default banners if fetch fails
+          setBanners([]);
+        }
+      } finally {
+        if (isMounted) {
+          setBannersLoading(false);
+        }
+      }
+    };
 
     const fetchFeaturedProducts = async () => {
       try {
@@ -121,6 +156,7 @@ export default function Home() {
       }
     };
 
+    fetchData();
     fetchFeaturedProducts();
 
     return () => {
