@@ -1,12 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Autoplay, Pagination } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/react';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
 import { productService, bannerService } from '../../services/api';
-import 'swiper/css';
-import 'swiper/css/pagination';
 
 const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
 const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
@@ -164,49 +160,75 @@ export default function Home() {
     };
   }, []);
 
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
   const visibleFeaturedProducts = useMemo(() => featuredProducts.slice(0, 4), [featuredProducts]);
+
+  // Auto-rotate banners
+  useEffect(() => {
+    if (posterSlides.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentSlideIndex((prev) => (prev + 1) % posterSlides.length);
+    }, 3600);
+
+    return () => clearInterval(interval);
+  }, [posterSlides.length]);
 
   return (
     <div className="home-intro mesh-bg">
       <section className="home-hero-section">
-        <Swiper
-          className="home-poster-swiper"
-          modules={[Autoplay, Pagination]}
-          slidesPerView={1}
-          loop
-          speed={900}
-          pagination={{ clickable: true }}
-          autoplay={{
-            delay: 3600,
-            disableOnInteraction: false,
-            pauseOnMouseEnter: true,
-          }}
-        >
-          {posterSlides.map((slide) => (
-            <SwiperSlide key={slide.id}>
-              <article className={`home-poster-slide home-poster-slide-${slide.tone}`}>
-                <div className="home-wave-ui home-poster-wave" aria-hidden="true">
-                  <svg className="home-wave home-wave-back" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                    <path d="M0,224 C160,188 300,174 430,196 C585,222 694,300 858,270 C1010,242 1134,148 1288,144 C1352,142 1406,154 1440,166 L1440,320 L0,320 Z" />
-                  </svg>
-                  <svg className="home-wave home-wave-mid" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                    <path d="M0,206 C170,246 288,252 430,216 C565,182 642,112 790,138 C942,164 1030,264 1192,250 C1296,240 1372,194 1440,176 L1440,320 L0,320 Z" />
-                  </svg>
-                  <svg className="home-wave home-wave-front" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                    <path d="M0,250 C150,224 278,212 420,232 C575,254 692,302 842,284 C1000,266 1084,202 1238,196 C1318,194 1388,210 1440,226 L1440,320 L0,320 Z" />
-                  </svg>
-                </div>
-                <div className="home-poster-content">
-                  <div className="home-poster-art reveal" aria-hidden="true">
-                    <div className={`home-poster-banner ${slide.image ? '' : 'home-poster-banner-empty'}`}>
-                      {slide.image && <img src={slide.image} alt="" />}
+        <div className="home-poster-swiper relative overflow-hidden">
+          {posterSlides.length > 0 && (
+            <>
+              {posterSlides.map((slide, index) => (
+                <article
+                  key={slide.id}
+                  className={`home-poster-slide home-poster-slide-${slide.tone} transition-opacity duration-500 ${
+                    index === currentSlideIndex ? 'opacity-100' : 'opacity-0 absolute inset-0'
+                  }`}
+                >
+                  <div className="home-wave-ui home-poster-wave" aria-hidden="true">
+                    <svg className="home-wave home-wave-back" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                      <path d="M0,224 C160,188 300,174 430,196 C585,222 694,300 858,270 C1010,242 1134,148 1288,144 C1352,142 1406,154 1440,166 L1440,320 L0,320 Z" />
+                    </svg>
+                    <svg className="home-wave home-wave-mid" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                      <path d="M0,206 C170,246 288,252 430,216 C565,182 642,112 790,138 C942,164 1030,264 1192,250 C1296,240 1372,194 1440,176 L1440,320 L0,320 Z" />
+                    </svg>
+                    <svg className="home-wave home-wave-front" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                      <path d="M0,250 C150,224 278,212 420,232 C575,254 692,302 842,284 C1000,266 1084,202 1238,196 C1318,194 1388,210 1440,226 L1440,320 L0,320 Z" />
+                    </svg>
+                  </div>
+                  <div className="home-poster-content">
+                    <div className="home-poster-art reveal" aria-hidden="true">
+                      <div className={`home-poster-banner ${slide.image ? '' : 'home-poster-banner-empty'}`}>
+                        {slide.image && <img src={slide.image} alt="" />}
+                      </div>
                     </div>
                   </div>
+                </article>
+              ))}
+              
+              {/* Pagination dots */}
+              {posterSlides.length > 1 && (
+                <div className="home-poster-pagination absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
+                  {posterSlides.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlideIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentSlideIndex
+                          ? 'bg-white w-6'
+                          : 'bg-white/50 hover:bg-white/75'
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
                 </div>
-              </article>
-            </SwiperSlide>
-          ))}
-        </Swiper>
+              )}
+            </>
+          )}
+        </div>
       </section>
 
       <section id="product-story" className="home-story-section mx-auto max-w-6xl px-4 pb-16 pt-14">
