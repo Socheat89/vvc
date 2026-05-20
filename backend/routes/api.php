@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/categories/import', [CategoryController::class, 'import']);
         Route::post('/categories', [CategoryController::class, 'store']);
+        Route::post('/categories/{id}', [CategoryController::class, 'update']);
         Route::put('/categories/{id}', [CategoryController::class, 'update']);
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 

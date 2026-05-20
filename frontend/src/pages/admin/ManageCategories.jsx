@@ -6,10 +6,60 @@ import translations from '../../translations';
 const emptyForm = {
   name: '',
   description: '',
+  showcase_image_file: null,
 };
 
+const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const CATEGORY_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/categories`;
 const ITEMS_PER_PAGE = 10;
 const sortOptions = ['newest', 'nameAsc', 'nameDesc'];
+const IMPORTED_CATEGORY_DESCRIPTION = 'Imported from product Excel file';
+
+const categoryShowcaseText = {
+  cardImage: {
+    kh: 'រូបភាព Product Show',
+    en: 'Product Show image',
+  },
+  cardImageHelp: {
+    kh: 'Upload រូប Product Show ដែលអ្នកបាន design សម្រាប់បង្ហាញលើ card ប្រភេទនេះ។',
+    en: 'Upload the designed Product Show image for this category card.',
+  },
+  currentImage: {
+    kh: 'រូបបច្ចុប្បន្ន',
+    en: 'Current image',
+  },
+  imageColumn: {
+    kh: 'រូប Card',
+    en: 'Card image',
+  },
+};
+
+const extractUploadPath = (value) => {
+  const normalizedValue = String(value || '').trim().replace(/\\/g, '/');
+  const uploadIndex = normalizedValue.toLowerCase().indexOf('uploads/');
+  return uploadIndex >= 0 ? normalizedValue.slice(uploadIndex).replace(/^\/+/, '') : '';
+};
+
+const getUploadImageUrl = (image, fallbackBase) => {
+  if (!image) return '';
+  const rawImage = String(image).trim().replace(/\\/g, '/');
+  if (!rawImage) return '';
+  if (/^(data:|blob:)/i.test(rawImage)) return rawImage;
+
+  const uploadPath = extractUploadPath(rawImage);
+  if (uploadPath) return `${PUBLIC_ASSET_BASE}/${uploadPath}`;
+  if (/^https?:\/\//i.test(rawImage)) return rawImage;
+
+  return `${fallbackBase}/${rawImage.replace(/^\/+/, '').replace(/^public\//i, '').replace(/^backend\/public\//i, '')}`;
+};
+
+const getCategoryImageUrl = (image) => getUploadImageUrl(image, CATEGORY_UPLOAD_BASE);
+
+const getCategoryDescription = (category) => {
+  const description = String(category.description || '').trim();
+
+  return description === IMPORTED_CATEGORY_DESCRIPTION ? '' : description;
+};
 
 const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,7 +91,7 @@ const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
           <div className="py-1">
             <button
               onClick={() => { setIsOpen(false); onEdit(); }}
-              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--teal)] hover:bg-teal-50 font-semibold transition-colors"
+              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--gold-deep)] hover:bg-[var(--gold-soft)] font-semibold transition-colors"
             >
               <svg className="mr-2.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               {t.edit[language]}
@@ -68,6 +118,7 @@ export default function ManageCategories() {
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [imagePreview, setImagePreview] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,11 +141,19 @@ export default function ManageCategories() {
     setCurrentPage(1);
   }, [searchTerm, sortBy]);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await categoryService.getAll();
-      setCategories(response.data.data || []);
+      const categoryResponse = await categoryService.getAll();
+      setCategories(categoryResponse.data.data || []);
       setFormError(null);
     } catch (err) {
       setFormError(t.loadFailed[language]);
@@ -168,6 +227,14 @@ export default function ManageCategories() {
     return filteredCategories.slice(start, start + ITEMS_PER_PAGE);
   }, [currentPageSafe, filteredCategories]);
 
+  const editingCategory = useMemo(
+    () => categories.find((category) => String(category.id) === String(editingId)),
+    [categories, editingId]
+  );
+
+  const currentCategoryImage = getCategoryImageUrl(editingCategory?.showcase_image);
+  const formPreviewImage = imagePreview || currentCategoryImage;
+
   const stats = useMemo(() => {
     return {
       totalCategories: categories.length,
@@ -177,6 +244,7 @@ export default function ManageCategories() {
   const handleAdd = () => {
     setEditingId(null);
     setFormData(emptyForm);
+    setImagePreview('');
     setFormError(null);
     setImportResult(null);
     setShowForm(true);
@@ -186,8 +254,10 @@ export default function ManageCategories() {
     setEditingId(category.id);
     setFormData({
       name: category.name || '',
-      description: category.description || '',
+      description: getCategoryDescription(category),
+      showcase_image_file: null,
     });
+    setImagePreview('');
     setFormError(null);
     setShowForm(true);
   };
@@ -217,16 +287,39 @@ export default function ManageCategories() {
     }
   };
 
+  const handleShowcaseImageChange = (event) => {
+    const file = event.target.files?.[0] || null;
+
+    setFormData((current) => ({
+      ...current,
+      showcase_image_file: file,
+    }));
+
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
+    } else {
+      setImagePreview('');
+    }
+  };
+
   const handleSave = async (event) => {
     event.preventDefault();
 
     try {
       setSaving(true);
       setFormError(null);
-      const payload = {
+      const basePayload = {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
       };
+      let payload = basePayload;
+
+      if (formData.showcase_image_file) {
+        payload = new FormData();
+        payload.append('name', basePayload.name);
+        payload.append('description', basePayload.description || '');
+        payload.append('showcase_image_file', formData.showcase_image_file);
+      }
 
       if (editingId) {
         await categoryService.update(editingId, payload);
@@ -238,6 +331,7 @@ export default function ManageCategories() {
       setShowForm(false);
       setEditingId(null);
       setFormData(emptyForm);
+      setImagePreview('');
     } catch (err) {
       setFormError(err.response?.data?.message || t.saveFailed[language]);
       console.error(err);
@@ -275,6 +369,7 @@ export default function ManageCategories() {
     setShowForm(false);
     setEditingId(null);
     setFormData(emptyForm);
+    setImagePreview('');
     setFormError(null);
   };
 
@@ -342,7 +437,7 @@ export default function ManageCategories() {
         <button
           type="button"
           onClick={() => setShowImportTip(!showImportTip)}
-          className="flex items-center gap-1.5 text-sm font-semibold text-[var(--teal)] hover:text-teal-600 transition"
+          className="flex items-center gap-1.5 text-sm font-semibold text-[var(--gold-deep)] hover:text-[var(--gold-deep)] transition"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -410,6 +505,36 @@ export default function ManageCategories() {
                 className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-[var(--ember)]"
                 rows="4"
               />
+            </div>
+
+            <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 md:grid-cols-[170px_1fr]">
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                {formPreviewImage ? (
+                  <img
+                    src={formPreviewImage}
+                    alt=""
+                    className="h-36 w-full object-contain p-3"
+                  />
+                ) : (
+                  <div className="grid h-36 place-items-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    VVC
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700">
+                  {categoryShowcaseText.cardImage[language]}
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleShowcaseImageChange}
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition file:mr-3 file:rounded-full file:border-0 file:bg-[var(--gold-soft)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--gold-deep)] focus:border-[var(--ember)]"
+                />
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {categoryShowcaseText.cardImageHelp[language]}
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-200/50 mt-6">
@@ -514,9 +639,10 @@ export default function ManageCategories() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="border-b border-white/70 bg-white/70">
               <tr>
+                <th className="px-5 py-4 text-left font-semibold text-slate-600">{categoryShowcaseText.imageColumn[language]}</th>
                 <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.name[language]}</th>
                 <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.description[language]}</th>
                 <th className="px-5 py-4 text-right font-semibold text-slate-600">{t.actions[language]}</th>
@@ -525,12 +651,23 @@ export default function ManageCategories() {
             <tbody>
               {paginatedCategories.map((category) => {
                 const isDeleting = deletingId === category.id;
+                const previewImage = getCategoryImageUrl(category.showcase_image);
+                const description = getCategoryDescription(category);
 
                 return (
                   <tr key={category.id} className="border-b border-white/70 transition hover:bg-white/60">
+                    <td className="px-5 py-4">
+                      <div className="grid h-16 w-20 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                        {previewImage ? (
+                          <img src={previewImage} alt="" className="h-full w-full object-contain p-1.5" />
+                        ) : (
+                          <span className="text-xs font-bold text-slate-300">VVC</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-5 py-4 font-semibold text-slate-900">{category.name}</td>
                     <td className="px-5 py-4 text-slate-600">
-                      {category.description || '-'}
+                      {description || '-'}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">

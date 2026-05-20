@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class CategoryController extends Controller
@@ -21,7 +23,7 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = \Illuminate\Support\Facades\Cache::remember('categories_all', 300, function () {
-            return Category::latest()->get();
+            return Category::withCount('products')->latest()->get();
         });
 
         return response()->json([
@@ -32,7 +34,7 @@ class CategoryController extends Controller
     // GET /api/categories/{id} - Public
     public function show($id)
     {
-        $category = Category::with('products')->find($id);
+        $category = Category::with('products')->withCount('products')->find($id);
 
         if (!$category) {
             return response()->json(['message' => 'Category not found'], Response::HTTP_NOT_FOUND);
@@ -46,8 +48,15 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|unique:categories|max:255',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
+            'showcase_image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
         ]);
+
+        unset($validated['showcase_image_file']);
+
+        if ($request->hasFile('showcase_image_file')) {
+            $validated['showcase_image'] = $this->storeWebpImage($request->file('showcase_image_file'));
+        }
 
         $category = Category::create($validated);
         \Illuminate\Support\Facades\Cache::forget('categories_all');
@@ -66,8 +75,16 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|unique:categories,name,' . $id . '|max:255',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
+            'showcase_image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
         ]);
+
+        unset($validated['showcase_image_file']);
+
+        if ($request->hasFile('showcase_image_file')) {
+            $validated['showcase_image'] = $this->storeWebpImage($request->file('showcase_image_file'));
+            $this->deleteLocalCategoryImage($category->showcase_image);
+        }
 
         $category->update($validated);
         \Illuminate\Support\Facades\Cache::forget('categories_all');
@@ -84,6 +101,7 @@ class CategoryController extends Controller
             return response()->json(['message' => 'Category not found'], Response::HTTP_NOT_FOUND);
         }
 
+        $this->deleteLocalCategoryImage($category->showcase_image);
         $category->delete();
         \Illuminate\Support\Facades\Cache::forget('categories_all');
 
@@ -270,6 +288,72 @@ class CategoryController extends Controller
                 return $number * 1024;
             default:
                 return $number;
+        }
+    }
+
+    private function storeWebpImage(UploadedFile $file): string
+    {
+        $directory = public_path('uploads/categories');
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $path = $directory . DIRECTORY_SEPARATOR . 'category-' . Str::uuid() . '.webp';
+
+        if (!$this->convertImagePathToWebp($file->getRealPath(), $path)) {
+            abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Unable to convert image to WebP.');
+        }
+
+        return $this->publicCategoryImageUrl($path);
+    }
+
+    private function convertImagePathToWebp(string $source, string $destination): bool
+    {
+        $info = @getimagesize($source);
+
+        if (!$info) {
+            return false;
+        }
+
+        $image = match ($info[2]) {
+            IMAGETYPE_JPEG => imagecreatefromjpeg($source),
+            IMAGETYPE_PNG => imagecreatefrompng($source),
+            IMAGETYPE_GIF => imagecreatefromgif($source),
+            IMAGETYPE_WEBP => imagecreatefromwebp($source),
+            IMAGETYPE_BMP => imagecreatefrombmp($source),
+            IMAGETYPE_AVIF => function_exists('imagecreatefromavif') ? imagecreatefromavif($source) : false,
+            default => false,
+        };
+
+        if (!$image) {
+            return false;
+        }
+
+        imagepalettetotruecolor($image);
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+        $saved = imagewebp($image, $destination, 82);
+        imagedestroy($image);
+
+        return $saved;
+    }
+
+    private function publicCategoryImageUrl(string $path): string
+    {
+        return url('uploads/categories/' . basename($path));
+    }
+
+    private function deleteLocalCategoryImage(?string $imageUrl): void
+    {
+        if (!$imageUrl || !str_contains($imageUrl, '/uploads/categories/')) {
+            return;
+        }
+
+        $path = public_path('uploads/categories/' . basename(parse_url($imageUrl, PHP_URL_PATH)));
+
+        if (is_file($path)) {
+            unlink($path);
         }
     }
 }

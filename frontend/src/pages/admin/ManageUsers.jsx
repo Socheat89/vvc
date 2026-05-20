@@ -43,7 +43,7 @@ const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
           <div className="py-1">
             <button
               onClick={() => { setIsOpen(false); onEdit(); }}
-              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--teal)] hover:bg-teal-50 font-semibold transition-colors"
+              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--gold-deep)] hover:bg-[var(--gold-soft)] font-semibold transition-colors"
             >
               <svg className="mr-2.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               {t.edit[language]}
@@ -493,7 +493,7 @@ export default function ManageUsers() {
                   <tr key={user.id} className="border-b border-white/70 transition hover:bg-white/60">
                     <td className="px-5 py-4 font-semibold text-slate-900">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--teal)]/10 text-[var(--teal)] font-bold">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--gold-soft)] text-[var(--gold-deep)] font-bold">
                           {(user.name || '?').charAt(0).toUpperCase()}
                         </div>
                         {user.name}

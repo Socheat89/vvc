@@ -25,13 +25,43 @@ const socialLinks = [
   },
 ];
 
+const productFooterText = {
+  title: {
+    kh: 'ផលិតផល',
+    en: 'Products',
+  },
+  links: [
+    {
+      to: '/products',
+      label: {
+        kh: 'ផលិតផលទាំងអស់',
+        en: 'All products',
+      },
+    },
+    {
+      to: '/products?panel=category',
+      label: {
+        kh: 'ប្រភេទផលិតផល',
+        en: 'Product categories',
+      },
+    },
+    {
+      to: '/products?stock=in',
+      label: {
+        kh: 'មានក្នុងស្តុក',
+        en: 'In-stock products',
+      },
+    },
+  ],
+};
+
 export default function Footer() {
   const { language } = useLanguage();
   const t = translations.footer;
 
   return (
-    <footer className="mt-20 border-t border-[var(--stroke)] bg-white text-[var(--coal)]">
-      <div className="mx-auto max-w-6xl px-4 py-16">
+    <footer className="mt-0 border-t border-[var(--stroke)] bg-white text-[var(--coal)]">
+      <div className="mx-auto max-w-6xl px-4 py-10 md:py-12">
         <div className="rounded-lg border border-[var(--stroke)] bg-[var(--fog)] p-10 shadow-sm">
           <div className="grid gap-10 md:grid-cols-4">
             <div>
@@ -42,11 +72,15 @@ export default function Footer() {
               </Link>
             </div>
             <div>
-              <h3 className="text-lg font-semibold">{t.collections[language]}</h3>
+              <h3 className="text-lg font-semibold">{productFooterText.title[language]}</h3>
               <ul className="mt-4 space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-[var(--gold)]">{t.electronics[language]}</a></li>
-                <li><a href="#" className="hover:text-[var(--gold)]">{t.clothing[language]}</a></li>
-                <li><a href="#" className="hover:text-[var(--gold)]">{t.books[language]}</a></li>
+                {productFooterText.links.map((item) => (
+                  <li key={item.to}>
+                    <Link to={item.to} className="hover:text-[var(--gold)]">
+                      {item.label[language]}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
             <div>
