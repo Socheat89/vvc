@@ -1,11 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Autoplay, Pagination } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
-import { productService, bannerService } from '../../services/api';
+import { productService, bannerService, categoryService } from '../../services/api';
+import BackgroundRemovedImage from '../../components/BackgroundRemovedImage';
+import { getProductDisplayName } from '../../utils/productDisplay';
+import 'swiper/css';
+import 'swiper/css/pagination';
 
 const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
 const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
+const BANNER_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/banners`;
+const CATEGORY_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/categories`;
+const BANNER_CACHE_KEY = 'vvc_home_banners_cache';
 
 const extractUploadPath = (value) => {
   const normalizedValue = String(value).trim().replace(/\\/g, '/');
@@ -24,7 +33,7 @@ const extractUploadPath = (value) => {
   return '';
 };
 
-const getImageUrl = (image) => {
+const getUploadImageUrl = (image, fallbackBase = PRODUCT_UPLOAD_BASE) => {
   if (!image) return '';
   const rawImage = String(image).trim().replace(/\\/g, '/');
   if (!rawImage) return '';
@@ -42,7 +51,55 @@ const getImageUrl = (image) => {
   let imagePath = rawImage.replace(/^\/+/, '');
   imagePath = imagePath.replace(/^public\//i, '').replace(/^backend\/public\//i, '');
 
-  return `${PRODUCT_UPLOAD_BASE}/${imagePath}`;
+  return `${fallbackBase}/${imagePath}`;
+};
+
+const getImageUrl = (image) => getUploadImageUrl(image, PRODUCT_UPLOAD_BASE);
+const getBannerImageUrl = (image) => getUploadImageUrl(image, BANNER_UPLOAD_BASE);
+const getCategoryImageUrl = (image) => getUploadImageUrl(image, CATEGORY_UPLOAD_BASE);
+
+const readCachedBanners = () => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const cachedBanners = JSON.parse(window.localStorage.getItem(BANNER_CACHE_KEY) || '[]');
+    return Array.isArray(cachedBanners) ? cachedBanners : [];
+  } catch {
+    return [];
+  }
+};
+
+const cacheBanners = (banners) => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(BANNER_CACHE_KEY, JSON.stringify(banners.slice(0, 10)));
+  } catch {
+    // Cache is optional; the live API response is still enough.
+  }
+};
+
+const preloadImage = (imageUrl) => {
+  if (!imageUrl || typeof document === 'undefined') return;
+
+  const alreadyPreloaded = Array.from(document.head.querySelectorAll('link[data-vvc-banner-preload]'))
+    .some((link) => link.href === imageUrl);
+
+  if (alreadyPreloaded) return;
+
+  const preloadLink = document.createElement('link');
+  preloadLink.rel = 'preload';
+  preloadLink.as = 'image';
+  preloadLink.href = imageUrl;
+  preloadLink.setAttribute('data-vvc-banner-preload', 'true');
+  document.head.appendChild(preloadLink);
+};
+
+const preloadFirstBanner = (banners) => {
+  const firstBanner = banners.find((banner) => banner?.image);
+  if (firstBanner) {
+    preloadImage(getBannerImageUrl(firstBanner.image));
+  }
 };
 
 const getInitials = (name = '') => {
@@ -50,23 +107,130 @@ const getInitials = (name = '') => {
   return (words[0]?.[0] || 'V') + (words[1]?.[0] || 'V');
 };
 
-const featuredLoadingCards = Array.from({ length: 4 }, (_, index) => index);
+const FEATURED_PRODUCTS_VISIBLE_COUNT = 4;
+const FEATURED_PRODUCTS_ROTATION_MS = 5000;
+const IMPORTED_CATEGORY_DESCRIPTION = 'Imported from product Excel file';
+const featuredLoadingCards = Array.from({ length: FEATURED_PRODUCTS_VISIBLE_COUNT }, (_, index) => index);
+const productShowLoadingCards = Array.from({ length: 4 }, (_, index) => index);
+
+const productShowText = {
+  kicker: {
+    kh: 'Product Show',
+    en: 'Product Show',
+  },
+  title: {
+    kh: 'បង្ហាញផលិតផលតាមប្រភេទ',
+    en: 'Product Show by Category',
+  },
+  desc: {
+    kh: 'មើលប្រភេទផលិតផលទាំងអស់របស់ VVC ជា card ស្អាតៗ និងបើកទៅមើលផលិតផលក្នុងប្រភេទនីមួយៗបានភ្លាម។',
+    en: 'Browse every VVC category as a clean product card and jump straight into the products inside it.',
+  },
+  category: {
+    kh: 'ប្រភេទផលិតផល',
+    en: 'Category',
+  },
+  productCount: {
+    kh: 'ផលិតផល',
+    en: 'products',
+  },
+  empty: {
+    kh: 'មិនទាន់មានប្រភេទផលិតផលសម្រាប់បង្ហាញ។',
+    en: 'No categories to show yet.',
+  },
+  error: {
+    kh: 'មិនអាចផ្ទុក Product Show បាននៅពេលនេះ។',
+    en: 'Unable to load Product Show right now.',
+  },
+  fallbackDesc: {
+    kh: 'ចូលមើលផលិតផលក្នុងប្រភេទនេះ',
+    en: 'View products in this category',
+  },
+};
+
+const shuffleProducts = (products) => {
+  const shuffledProducts = [...products];
+
+  for (let index = shuffledProducts.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledProducts[index], shuffledProducts[randomIndex]] = [
+      shuffledProducts[randomIndex],
+      shuffledProducts[index],
+    ];
+  }
+
+  return shuffledProducts;
+};
+
+const normalizeLookupValue = (value) => String(value ?? '').trim();
+
+const getCategoryDescription = (category, fallbackText) => {
+  const description = normalizeLookupValue(category.description);
+
+  return description === IMPORTED_CATEGORY_DESCRIPTION ? fallbackText : description || fallbackText;
+};
+
+const parseCountValue = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+
+  const count = Number(value);
+  return Number.isFinite(count) ? count : null;
+};
+
+const buildProductCountLookup = (products) => {
+  const counts = new Map();
+
+  products.forEach((product) => {
+    const categoryId = normalizeLookupValue(product.category_id ?? product.category?.id);
+    const categoryName = normalizeLookupValue(product.category?.name || product.item_group).toLowerCase();
+    const keys = [
+      categoryId ? `id:${categoryId}` : '',
+      categoryName ? `name:${categoryName}` : '',
+    ].filter(Boolean);
+
+    keys.forEach((key) => {
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+  });
+
+  return counts;
+};
+
+const getCategoryProductCount = (category, productCountLookup) => {
+  const apiCount = [
+    category.products_count,
+    category.product_count,
+    category.productsCount,
+    category.products_total,
+    category.total_products,
+  ].map(parseCountValue).find((count) => count !== null);
+
+  if (apiCount !== undefined) return apiCount;
+
+  if (Array.isArray(category.products)) {
+    return category.products.length;
+  }
+
+  const categoryId = normalizeLookupValue(category.id);
+  const categoryName = normalizeLookupValue(category.name).toLowerCase();
+
+  return productCountLookup.get(`id:${categoryId}`)
+    ?? productCountLookup.get(`name:${categoryName}`)
+    ?? 0;
+};
 
 export default function Home() {
   const { language } = useLanguage();
   const t = translations.home;
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [banners, setBanners] = useState([]);
+  const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
+  const [productShowCategories, setProductShowCategories] = useState([]);
+  const [productShowLoading, setProductShowLoading] = useState(true);
+  const [productShowError, setProductShowError] = useState(false);
+  const [banners, setBanners] = useState(() => readCachedBanners());
   const [featuredLoading, setFeaturedLoading] = useState(true);
-  const [bannersLoading, setBannersLoading] = useState(true);
   const [featuredError, setFeaturedError] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
-
-  const principles = [
-    { step: '01', titleKey: 'feature1Title', descKey: 'feature1Desc' },
-    { step: '02', titleKey: 'feature2Title', descKey: 'feature2Desc' },
-    { step: '03', titleKey: 'feature3Title', descKey: 'feature3Desc' },
-  ];
 
   const howSteps = [
     { step: '01', titleKey: 'howStep1Title', descKey: 'howStep1Desc' },
@@ -80,7 +244,7 @@ export default function Home() {
       return banners.map((banner) => ({
         id: banner.id.toString(),
         tone: banner.tone || 'gold',
-        image: banner.image || '',
+        image: getBannerImageUrl(banner.image),
         title: banner.title || '',
       }));
     }
@@ -112,18 +276,17 @@ export default function Home() {
       try {
         // Fetch banners
         const bannersResponse = await bannerService.getAll();
+        const nextBanners = bannersResponse.data.data || [];
         if (isMounted) {
-          setBanners(bannersResponse.data.data || []);
+          preloadFirstBanner(nextBanners);
+          setBanners(nextBanners);
+          cacheBanners(nextBanners);
         }
       } catch (error) {
         console.error('Failed to fetch banners:', error);
         if (isMounted) {
-          // Use default banners if fetch fails
-          setBanners([]);
-        }
-      } finally {
-        if (isMounted) {
-          setBannersLoading(false);
+          // Keep cached banners on screen if the live request fails.
+          setBanners((currentBanners) => currentBanners);
         }
       }
     };
@@ -132,12 +295,13 @@ export default function Home() {
       try {
         const response = await productService.getAll();
         const products = response.data.data || [];
-        const latestProducts = [...products]
-          .sort((a, b) => Number(b.id || 0) - Number(a.id || 0))
-          .slice(0, 6);
+        const shuffledProducts = shuffleProducts(
+          [...products].sort((a, b) => Number(b.id || 0) - Number(a.id || 0))
+        );
 
         if (isMounted) {
-          setFeaturedProducts(latestProducts);
+          setFeaturedProducts(shuffledProducts);
+          setFeaturedStartIndex(0);
           setFeaturedError(false);
         }
       } catch (error) {
@@ -152,109 +316,204 @@ export default function Home() {
       }
     };
 
+    const fetchProductShowCategories = async () => {
+      try {
+        const response = await categoryService.getAll();
+        if (isMounted) {
+          setProductShowCategories(response.data.data || []);
+          setProductShowError(false);
+        }
+      } catch (error) {
+        console.error(error);
+        if (isMounted) {
+          setProductShowError(true);
+        }
+      } finally {
+        if (isMounted) {
+          setProductShowLoading(false);
+        }
+      }
+    };
+
     fetchData();
     fetchFeaturedProducts();
+    fetchProductShowCategories();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-
-  const visibleFeaturedProducts = useMemo(() => featuredProducts.slice(0, 4), [featuredProducts]);
-
-  // Auto-rotate banners
   useEffect(() => {
-    if (posterSlides.length <= 1) return;
+    preloadImage(posterSlides.find((slide) => slide.image)?.image);
+  }, [posterSlides]);
 
-    const interval = setInterval(() => {
-      setCurrentSlideIndex((prev) => (prev + 1) % posterSlides.length);
-    }, 3600);
+  useEffect(() => {
+    if (featuredProducts.length <= FEATURED_PRODUCTS_VISIBLE_COUNT) return undefined;
 
-    return () => clearInterval(interval);
-  }, [posterSlides.length]);
+    const timer = window.setInterval(() => {
+      setFeaturedStartIndex((currentIndex) => (
+        (currentIndex + FEATURED_PRODUCTS_VISIBLE_COUNT) % featuredProducts.length
+      ));
+    }, FEATURED_PRODUCTS_ROTATION_MS);
+
+    return () => window.clearInterval(timer);
+  }, [featuredProducts.length]);
+
+  const visibleFeaturedProducts = useMemo(() => {
+    if (featuredProducts.length <= FEATURED_PRODUCTS_VISIBLE_COUNT) {
+      return featuredProducts;
+    }
+
+    return Array.from({ length: FEATURED_PRODUCTS_VISIBLE_COUNT }, (_, index) => (
+      featuredProducts[(featuredStartIndex + index) % featuredProducts.length]
+    ));
+  }, [featuredProducts, featuredStartIndex]);
+
+  const productCountLookup = useMemo(() => (
+    buildProductCountLookup(featuredProducts)
+  ), [featuredProducts]);
+
+  const productShowCards = useMemo(() => (
+    productShowCategories.map((category) => {
+      return {
+        category,
+        imageUrl: getCategoryImageUrl(category.showcase_image),
+        productCount: getCategoryProductCount(category, productCountLookup),
+      };
+    })
+  ), [productCountLookup, productShowCategories]);
 
   return (
     <div className="home-intro mesh-bg">
       <section className="home-hero-section">
-        <div className="home-poster-swiper relative overflow-hidden">
-          {posterSlides.length > 0 && (
-            <>
-              {posterSlides.map((slide, index) => (
-                <article
-                  key={slide.id}
-                  className={`home-poster-slide home-poster-slide-${slide.tone} transition-opacity duration-500 ${
-                    index === currentSlideIndex ? 'opacity-100' : 'opacity-0 absolute inset-0'
-                  }`}
-                >
-                  <div className="home-wave-ui home-poster-wave" aria-hidden="true">
-                    <svg className="home-wave home-wave-back" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                      <path d="M0,224 C160,188 300,174 430,196 C585,222 694,300 858,270 C1010,242 1134,148 1288,144 C1352,142 1406,154 1440,166 L1440,320 L0,320 Z" />
-                    </svg>
-                    <svg className="home-wave home-wave-mid" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                      <path d="M0,206 C170,246 288,252 430,216 C565,182 642,112 790,138 C942,164 1030,264 1192,250 C1296,240 1372,194 1440,176 L1440,320 L0,320 Z" />
-                    </svg>
-                    <svg className="home-wave home-wave-front" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                      <path d="M0,250 C150,224 278,212 420,232 C575,254 692,302 842,284 C1000,266 1084,202 1238,196 C1318,194 1388,210 1440,226 L1440,320 L0,320 Z" />
-                    </svg>
-                  </div>
-                  <div className="home-poster-content">
-                    <div className="home-poster-art reveal" aria-hidden="true">
-                      <div className={`home-poster-banner ${slide.image ? '' : 'home-poster-banner-empty'}`}>
-                        {slide.image && <img src={slide.image} alt="" />}
+        {posterSlides.length > 0 && (
+          <Swiper
+            className="home-poster-swiper"
+            modules={[Autoplay, Pagination]}
+            slidesPerView={1}
+            loop={posterSlides.length > 1}
+            speed={850}
+            grabCursor
+            watchOverflow
+            pagination={posterSlides.length > 1 ? { clickable: true } : false}
+            autoplay={posterSlides.length > 1 ? {
+              delay: 3600,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true,
+            } : false}
+          >
+            {posterSlides.map((slide, index) => {
+              const hasSlideImage = slide.image && !imageErrors[`banner-${slide.id}`];
+              const isFirstSlide = index === 0;
+
+              return (
+                <SwiperSlide key={slide.id}>
+                  <article className={`home-poster-slide home-poster-slide-${slide.tone}`}>
+                    <div className="home-poster-content">
+                      <div className="home-poster-art" aria-hidden="true">
+                        <div className={`home-poster-banner ${hasSlideImage ? '' : 'home-poster-banner-empty'}`}>
+                          {hasSlideImage && (
+                            <img
+                              src={slide.image}
+                              alt=""
+                              loading={isFirstSlide ? 'eager' : 'lazy'}
+                              fetchPriority={isFirstSlide ? 'high' : 'auto'}
+                              decoding="async"
+                              sizes="100vw"
+                              onError={() => setImageErrors((current) => ({
+                                ...current,
+                                [`banner-${slide.id}`]: true,
+                              }))}
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </article>
-              ))}
-              
-              {/* Pagination dots */}
-              {posterSlides.length > 1 && (
-                <div className="home-poster-pagination absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-                  {posterSlides.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentSlideIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentSlideIndex
-                          ? 'bg-white w-6'
-                          : 'bg-white/50 hover:bg-white/75'
-                      }`}
-                      aria-label={`Go to slide ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+                    <div className="home-wave-ui home-poster-wave" aria-hidden="true">
+                      <svg className="home-wave home-wave-back" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                        <path d="M0,224 C160,188 300,174 430,196 C585,222 694,300 858,270 C1010,242 1134,148 1288,144 C1352,142 1406,154 1440,166 L1440,320 L0,320 Z" />
+                      </svg>
+                      <svg className="home-wave home-wave-mid" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                        <path d="M0,206 C170,246 288,252 430,216 C565,182 642,112 790,138 C942,164 1030,264 1192,250 C1296,240 1372,194 1440,176 L1440,320 L0,320 Z" />
+                      </svg>
+                      <svg className="home-wave home-wave-front" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                        <path d="M0,250 C150,224 278,212 420,232 C575,254 692,302 842,284 C1000,266 1084,202 1238,196 C1318,194 1388,210 1440,226 L1440,320 L0,320 Z" />
+                      </svg>
+                    </div>
+                  </article>
+                </SwiperSlide>
+              );
+            })}
+          </Swiper>
+        )}
       </section>
 
-      <section id="product-story" className="home-story-section mx-auto max-w-6xl px-4 pb-16 pt-14">
-        <div className="home-guide-header reveal">
-          <span className="home-guide-kicker">{t.guideTagline[language]}</span>
-          <h2>{t.guideTitle[language]}</h2>
-          <p>{t.guideDesc[language]}</p>
+      <section id="product-show" className="home-product-show-section mx-auto max-w-6xl px-4 pb-10 pt-14">
+        <div className="home-product-show-header reveal">
+          <span>{productShowText.kicker[language]}</span>
+          <h2>{productShowText.title[language]}</h2>
+          <p>{productShowText.desc[language]}</p>
         </div>
 
-        <div className="home-guide-map reveal reveal-delay-1">
-          {principles.map((feature, index) => (
-            <article
-              key={feature.step}
-              className={`home-guide-step ${index === 1 ? 'home-guide-step-lower' : ''}`}
-            >
-              <div className="home-guide-pin">
-                <span>{feature.step}</span>
+        {productShowLoading ? (
+          <div className="home-product-show-grid home-product-show-loading-grid" aria-label={t.featuredLoading[language]}>
+            {productShowLoadingCards.map((item) => (
+              <div key={item} className="home-product-show-card home-product-show-card-loading" aria-hidden="true">
+                <div className="home-product-show-media">
+                  <span className="loading-image" />
+                </div>
+                <div className="home-product-show-body">
+                  <span className="loading-line loading-line-xs" />
+                  <h3 className="loading-line loading-line-md" />
+                  <p className="loading-text" />
+                </div>
               </div>
-              <div className="home-guide-card">
-                <div className="home-guide-card-meta">{t.guideStep[language]} {feature.step}</div>
-                <h3>{t[feature.titleKey][language]}</h3>
-                <p>{t[feature.descKey][language]}</p>
-              </div>
-            </article>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : productShowError ? (
+          <div className="home-product-show-status">{productShowText.error[language]}</div>
+        ) : productShowCards.length === 0 ? (
+          <div className="home-product-show-status">{productShowText.empty[language]}</div>
+        ) : (
+          <div className="home-product-show-grid reveal reveal-delay-1">
+            {productShowCards.map(({ category, imageUrl, productCount }) => {
+              const hasImage = imageUrl && !imageErrors[`product-show-${category.id}`];
+
+              return (
+                <Link
+                  key={category.id}
+                  to={`/products?category=${category.id}`}
+                  className="home-product-show-card"
+                >
+                  <div className="home-product-show-media">
+                    {hasImage ? (
+                      <BackgroundRemovedImage
+                        src={imageUrl}
+                        alt={category.name}
+                        onError={() => setImageErrors((current) => ({
+                          ...current,
+                          [`product-show-${category.id}`]: true,
+                        }))}
+                      />
+                    ) : (
+                      <div className="home-product-show-fallback">{getInitials(category.name)}</div>
+                    )}
+                  </div>
+                  <div className="home-product-show-body">
+                    <span>{productShowText.category[language]}</span>
+                    <h3>{category.name}</h3>
+                    <p>{getCategoryDescription(category, productShowText.fallbackDesc[language])}</p>
+                    <div className="home-product-show-footer">
+                      <strong>{productCount}</strong>
+                      <small>{productShowText.productCount[language]}</small>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section id="featured-products" className="home-featured-section">
@@ -296,21 +555,26 @@ export default function Home() {
           ) : (
             <div className="home-featured-grid reveal reveal-delay-1">
               {visibleFeaturedProducts.map((product) => {
+                const productName = getProductDisplayName(product, language);
                 const imageUrl = getImageUrl(product.image);
                 const hasImage = imageUrl && !imageErrors[product.id];
                 const inStock = Number(product.stock) > 0;
+                const price = Number(product.price || 0);
+                const priceLabel = price > 0
+                  ? `$${price.toFixed(2)}`
+                  : t.featuredViewMore[language];
 
                 return (
                   <Link key={product.id} to={`/products/${product.id}`} className="home-featured-card">
                     <div className="home-featured-media">
                       {hasImage ? (
-                        <img
+                        <BackgroundRemovedImage
                           src={imageUrl}
-                          alt={product.name}
+                          alt={productName}
                           onError={() => setImageErrors((current) => ({ ...current, [product.id]: true }))}
                         />
                       ) : (
-                        <div className="home-featured-fallback">{getInitials(product.name)}</div>
+                        <div className="home-featured-fallback">{getInitials(productName)}</div>
                       )}
                       <span className={`home-featured-stock ${inStock ? 'in' : 'out'}`}>
                         {inStock ? t.featuredInStock[language] : t.featuredOutOfStock[language]}
@@ -318,11 +582,10 @@ export default function Home() {
                     </div>
                     <div className="home-featured-body">
                       <span>{product.category?.name || t.featuredCategory[language]}</span>
-                      <h3>{product.name}</h3>
+                      <h3>{productName}</h3>
                       <p>{product.description || t.featuredNoDescription[language]}</p>
                       <div className="home-featured-footer">
-                        <strong>${Number(product.price || 0).toFixed(2)}</strong>
-                        <small>{t.viewProduct[language]}</small>
+                        <strong className={price > 0 ? '' : 'home-featured-view-more'}>{priceLabel}</strong>
                       </div>
                     </div>
                   </Link>
@@ -334,7 +597,7 @@ export default function Home() {
       </section>
 
       <section className="home-how-section">
-        <div className="home-how-layout mx-auto max-w-6xl px-4 py-16">
+        <div className="home-how-layout mx-auto max-w-6xl px-4 pb-10 pt-16">
           <div className="home-section-heading home-section-heading-left reveal">
             <div>
               <span>{t.howKicker[language]}</span>

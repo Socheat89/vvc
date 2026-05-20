@@ -98,6 +98,7 @@ class ProductController extends Controller
         $product = Product::create($validated)->load('category');
         
         \Illuminate\Support\Facades\Cache::forget('products_all');
+        \Illuminate\Support\Facades\Cache::forget('categories_all');
 
         return response()->json(['data' => $product], Response::HTTP_CREATED);
     }
@@ -144,6 +145,7 @@ class ProductController extends Controller
         $product->update($validated);
         
         \Illuminate\Support\Facades\Cache::forget('products_all');
+        \Illuminate\Support\Facades\Cache::forget('categories_all');
 
         return response()->json(['data' => $product->load('category')]);
     }
@@ -257,6 +259,7 @@ class ProductController extends Controller
         });
 
         \Illuminate\Support\Facades\Cache::forget('products_all');
+        \Illuminate\Support\Facades\Cache::forget('categories_all');
 
         return response()->json([
             'message' => 'Products imported successfully.',
@@ -280,6 +283,7 @@ class ProductController extends Controller
         $product->delete();
 
         \Illuminate\Support\Facades\Cache::forget('products_all');
+        \Illuminate\Support\Facades\Cache::forget('categories_all');
 
         return response()->json(['message' => 'Product deleted successfully']);
     }
@@ -415,7 +419,7 @@ class ProductController extends Controller
 
         return Category::firstOrCreate(
             ['name' => $categoryName],
-            ['description' => 'Imported from product Excel file']
+            ['description' => null]
         )->id;
     }
 

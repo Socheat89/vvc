@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { productService, categoryService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
+import { getProductDisplayName } from '../../utils/productDisplay';
 
 export default function Dashboard() {
   const [products, setProducts] = useState([]);
@@ -208,6 +209,7 @@ export default function Dashboard() {
               </thead>
               <tbody className="divide-y divide-[var(--stroke)]">
                 {recentProducts.map(product => {
+                  const productName = getProductDisplayName(product, language);
                   const status =
                     Number(product.stock || 0) === 0
                       ? { label: t.outOfStockLabel[language], bg: 'bg-rose-50', text: 'text-rose-600' }
@@ -218,7 +220,7 @@ export default function Dashboard() {
                   return (
                     <tr key={product.id} className="transition-colors hover:bg-slate-50/70 group">
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{product.name}</div>
+                        <div className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{productName}</div>
                       </td>
                       <td className="px-6 py-4 font-medium text-slate-600">${Number(product.price || 0).toFixed(2)}</td>
                       <td className="px-6 py-4 font-medium text-slate-600">{product.stock}</td>
@@ -317,14 +319,14 @@ export default function Dashboard() {
         <div className="glass-card rounded-2xl p-5 reveal reveal-delay-2 transition-all duration-300 hover:shadow-lg">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-slate-900">{t.needsAttention[language]}</h2>
-            <Link to="/admin/products" className="text-sm font-semibold text-[var(--teal)] hover:text-emerald-700">
+            <Link to="/admin/products" className="text-sm font-semibold text-[var(--gold-deep)] hover:text-[var(--gold-deep)]">
               {t.viewAll[language]}
             </Link>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {stockAlerts.map(product => (
               <div key={product.id} className="rounded-lg border border-white/80 bg-white/70 p-4">
-                <p className="font-semibold text-slate-900">{product.name}</p>
+                <p className="font-semibold text-slate-900">{getProductDisplayName(product, language)}</p>
                 <p className="mt-2 text-sm text-slate-600">
                   {product.stock} {t.stock[language]}
                 </p>

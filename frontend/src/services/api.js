@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php/api';
+const PRODUCTION_API_URL = 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php/api';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : PRODUCTION_API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
@@ -98,7 +99,14 @@ export const categoryService = {
   getAll: () => api.get('/categories'),
   getById: (id) => api.get(`/categories/${id}`),
   create: (data) => api.post('/categories', data),
-  update: (id, data) => api.put(`/categories/${id}`, data),
+  update: (id, data) => {
+    if (data instanceof FormData) {
+      data.append('_method', 'PUT');
+      return api.post(`/categories/${id}`, data);
+    }
+
+    return api.put(`/categories/${id}`, data);
+  },
   delete: (id) => api.delete(`/categories/${id}`),
   import: async (file) => {
     window.dispatchEvent(new Event('api-request-start'));

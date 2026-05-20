@@ -293,6 +293,10 @@ const translations = {
       kh: 'មើលផលិតផល',
       en: 'View product',
     },
+    featuredViewMore: {
+      kh: 'មើលបន្ថែម',
+      en: 'View more',
+    },
     howKicker: {
       kh: 'របៀបប្រើប្រាស់',
       en: 'How It Works',
@@ -557,6 +561,10 @@ const translations = {
       kh: 'មើល',
       en: 'View',
     },
+    viewMore: {
+      kh: 'មើលបន្ថែម',
+      en: 'View more',
+    },
     noProducts: {
       kh: 'មិនមានផលិតផល',
       en: 'No products available',
@@ -732,6 +740,10 @@ const translations = {
     viewProduct: {
       kh: 'មើលផលិតផល',
       en: 'View product',
+    },
+    priceViewMore: {
+      kh: 'មើលបន្ថែម',
+      en: 'View more',
     },
     productDetails: {
       kh: 'ព័ត៌មានលម្អិតផលិតផល',

@@ -10,6 +10,32 @@ const emptyForm = {
   imageFile: null,
 };
 
+const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const BANNER_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/banners`;
+
+const getBannerImageUrl = (image) => {
+  if (!image) return '';
+  const rawImage = String(image).trim().replace(/\\/g, '/');
+  if (!rawImage) return '';
+  if (/^(data:|blob:)/i.test(rawImage)) return rawImage;
+
+  const uploadIndex = rawImage.toLowerCase().indexOf('uploads/');
+  if (uploadIndex >= 0) {
+    return `${PUBLIC_ASSET_BASE}/${rawImage.slice(uploadIndex).replace(/^\/+/, '')}`;
+  }
+
+  if (/^https?:\/\//i.test(rawImage)) {
+    return rawImage;
+  }
+
+  const imagePath = rawImage
+    .replace(/^\/+/, '')
+    .replace(/^public\//i, '')
+    .replace(/^backend\/public\//i, '');
+
+  return `${BANNER_UPLOAD_BASE}/${imagePath}`;
+};
+
 const toneOptions = [
   { value: 'gold', label: { kh: 'ពណ៌មាស', en: 'Gold' } },
   { value: 'paper', label: { kh: 'ពណ៌ក្រដាស', en: 'Paper' } },
@@ -46,7 +72,7 @@ const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
           <div className="py-1">
             <button
               onClick={() => { setIsOpen(false); onEdit(); }}
-              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--teal)] hover:bg-teal-50 font-semibold transition-colors"
+              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--gold-deep)] hover:bg-[var(--gold-soft)] font-semibold transition-colors"
             >
               <svg className="mr-2.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               {t.edit[language]}
@@ -403,7 +429,7 @@ export default function ManageBanners() {
             >
               {banner.image && (
                 <div className="h-16 w-24 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100">
-                  <img src={banner.image} alt={banner.title} className="h-full w-full object-cover" />
+                  <img src={getBannerImageUrl(banner.image)} alt={banner.title} className="h-full w-full object-cover" />
                 </div>
               )}
               <div className="flex-1 min-w-0">

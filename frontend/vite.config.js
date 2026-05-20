@@ -7,9 +7,13 @@ export default defineConfig({
     port: 3000,
     host: '127.0.0.1',
     strictPort: false,
+    allowedHosts: [
+      'days-mia-automatic-express.trycloudflare.com',
+      'subject-radiation-wheel-compounds.trycloudflare.com',
+    ],
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php',
         changeOrigin: true,
         secure: false,
       }

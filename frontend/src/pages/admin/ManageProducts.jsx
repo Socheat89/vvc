@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { productService, categoryService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
+import { getProductDisplayName } from '../../utils/productDisplay';
 
 const emptyForm = {
   name: '',
@@ -47,7 +48,7 @@ const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
           <div className="py-1">
             <button
               onClick={() => { setIsOpen(false); onEdit(); }}
-              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--teal)] hover:bg-teal-50 font-semibold transition-colors"
+              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--gold-deep)] hover:bg-[var(--gold-soft)] font-semibold transition-colors"
             >
               <svg className="mr-2.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               {t.edit[language]}
@@ -219,14 +220,14 @@ export default function ManageProducts() {
         return matchesSearch && matchesCategory && matchesStock;
       })
       .sort((a, b) => {
-        if (sortBy === 'nameAsc') return a.name.localeCompare(b.name);
+        if (sortBy === 'nameAsc') return getProductDisplayName(a, language).localeCompare(getProductDisplayName(b, language));
         if (sortBy === 'priceAsc') return Number(a.price) - Number(b.price);
         if (sortBy === 'priceDesc') return Number(b.price) - Number(a.price);
         if (sortBy === 'stockAsc') return Number(a.stock || 0) - Number(b.stock || 0);
         if (sortBy === 'stockDesc') return Number(b.stock || 0) - Number(a.stock || 0);
         return Number(b.id) - Number(a.id);
       });
-  }, [categoryFilter, products, searchTerm, sortBy, stockFilter]);
+  }, [categoryFilter, products, searchTerm, sortBy, stockFilter, language]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const currentPageSafe = Math.min(currentPage, totalPages);
@@ -480,7 +481,7 @@ export default function ManageProducts() {
         <button
           type="button"
           onClick={() => setShowImportTip(!showImportTip)}
-          className="flex items-center gap-1.5 text-sm font-semibold text-[var(--teal)] hover:text-teal-600 transition"
+          className="flex items-center gap-1.5 text-sm font-semibold text-[var(--gold-deep)] hover:text-[var(--gold-deep)] transition"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -509,7 +510,7 @@ export default function ManageProducts() {
         </div>
         <div className="glass-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-slate-300/60">
           <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{t.totalStock[language]}</p>
-          <p className="mt-3 text-3xl font-semibold text-[var(--teal)]">{stats.totalStock}</p>
+          <p className="mt-3 text-3xl font-semibold text-[var(--gold-deep)]">{stats.totalStock}</p>
         </div>
         <div className="glass-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-slate-300/60">
           <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{t.inventoryValue[language]}</p>
@@ -603,7 +604,7 @@ export default function ManageProducts() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageFileChange}
-                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition file:mr-4 file:rounded-full file:border-0 file:bg-[var(--teal)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white focus:border-[var(--ember)]"
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition file:mr-4 file:rounded-full file:border-0 file:bg-[var(--gold-deep)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white focus:border-[var(--ember)]"
                 />
                 <p className="mt-2 text-xs text-slate-500">{t.imageUploadHelp[language]}</p>
                 {imagePreview && (
@@ -765,6 +766,7 @@ export default function ManageProducts() {
                 const stock = Number(product.stock || 0);
                 const isStockBusy = stockUpdatingId === product.id;
                 const isDeleting = deletingId === product.id;
+                const productName = getProductDisplayName(product, language);
 
                 return (
                   <tr key={product.id} className="border-b border-white/70 transition hover:bg-white/60">
@@ -772,7 +774,7 @@ export default function ManageProducts() {
                       <div className="flex items-center gap-3">
                         <div className="h-14 w-14 overflow-hidden rounded-lg bg-slate-100">
                           {product.image ? (
-                            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                            <img src={product.image} alt={productName} className="h-full w-full object-cover" />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-400">
                               VVC
@@ -780,9 +782,9 @@ export default function ManageProducts() {
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900">{product.name}</p>
+                          <p className="font-semibold text-slate-900">{productName}</p>
                           {product.item_code && (
-                            <p className="mt-1 text-xs font-semibold text-[var(--teal)]">
+                            <p className="mt-1 text-xs font-semibold text-[var(--gold-deep)]">
                               {t.itemCode[language]}: {product.item_code}
                             </p>
                           )}
