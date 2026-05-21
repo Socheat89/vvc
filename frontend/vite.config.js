@@ -8,8 +8,7 @@ export default defineConfig({
     host: '127.0.0.1',
     strictPort: false,
     allowedHosts: [
-      'days-mia-automatic-express.trycloudflare.com',
-      'subject-radiation-wheel-compounds.trycloudflare.com',
+      '.trycloudflare.com',
     ],
     proxy: {
       '/api': {

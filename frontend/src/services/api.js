@@ -168,12 +168,7 @@ export const bannerService = {
   adminGetAll: () => api.get('/banners/admin/all'),
   create: (data) => api.post('/banners', data),
   update: (id, data) => {
-    if (data instanceof FormData) {
-      data.append('_method', 'PUT');
-      return api.post(`/banners/${id}`, data);
-    }
-
-    return api.put(`/banners/${id}`, data);
+    return api.post(`/banners/${id}`, data);
   },
   delete: (id) => api.delete(`/banners/${id}`),
 };

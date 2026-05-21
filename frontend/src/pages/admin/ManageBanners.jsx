@@ -42,6 +42,25 @@ const toneOptions = [
   { value: 'ink', label: { kh: 'ពណ៌墨', en: 'Ink' } },
 ];
 
+const getApiErrorMessage = (error, fallback) => {
+  const data = error.response?.data;
+
+  if (data?.errors && typeof data.errors === 'object') {
+    const firstError = Object.values(data.errors).flat().find(Boolean);
+    if (firstError) return firstError;
+  }
+
+  if (data?.message && data.message !== 'Server Error') {
+    return data.message;
+  }
+
+  if (error.response?.status === 500) {
+    return 'Server Error: banner image upload/update failed on the backend. Please deploy the BannerController fix and check uploads/banners permissions.';
+  }
+
+  return data?.message || error.message || fallback;
+};
+
 const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -203,7 +222,7 @@ export default function ManageBanners() {
       await fetchBanners();
       resetForm();
     } catch (err) {
-      setFormError(err.response?.data?.message || t.saveFailed[language]);
+      setFormError(getApiErrorMessage(err, t.saveFailed[language]));
       console.error(err);
     } finally {
       setSaving(false);

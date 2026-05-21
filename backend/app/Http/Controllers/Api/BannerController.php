@@ -40,64 +40,73 @@ class BannerController extends Controller
     // POST /api/banners - Admin only
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'nullable|string|max:255',
-            'tone' => 'required|in:gold,paper,ink',
-            'position' => 'nullable|integer|min:0',
-            'active' => 'nullable|boolean',
-            'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'nullable|string|max:255',
+                'tone' => 'required|in:gold,paper,ink',
+                'position' => 'nullable|integer|min:0',
+                'active' => 'nullable|boolean',
+                'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
+            ]);
 
-        unset($validated['image_file']);
+            unset($validated['image_file']);
 
-        if (!isset($validated['position'])) {
-            $validated['position'] = Banner::max('position') + 1 ?? 0;
+            if (!isset($validated['position'])) {
+                $validated['position'] = (Banner::max('position') ?? -1) + 1;
+            }
+
+            if (!isset($validated['active'])) {
+                $validated['active'] = true;
+            }
+
+            if ($request->hasFile('image_file')) {
+                $validated['image'] = $this->storeWebpImage($request->file('image_file'));
+            }
+
+            $banner = Banner::create($validated);
+
+            \Illuminate\Support\Facades\Cache::forget('banners_all');
+
+            return response()->json(['data' => $banner], Response::HTTP_CREATED);
+        } catch (\Throwable $error) {
+            return $this->bannerSaveErrorResponse($error);
         }
-
-        if (!isset($validated['active'])) {
-            $validated['active'] = true;
-        }
-
-        if ($request->hasFile('image_file')) {
-            $validated['image'] = $this->storeWebpImage($request->file('image_file'));
-        }
-
-        $banner = Banner::create($validated);
-
-        \Illuminate\Support\Facades\Cache::forget('banners_all');
-
-        return response()->json(['data' => $banner], Response::HTTP_CREATED);
     }
 
     // PUT /api/banners/{id} - Admin only
     public function update(Request $request, $id)
     {
-        $banner = Banner::find($id);
+        try {
+            $banner = Banner::find($id);
 
-        if (!$banner) {
-            return response()->json(['message' => 'Banner not found'], Response::HTTP_NOT_FOUND);
+            if (!$banner) {
+                return response()->json(['message' => 'Banner not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $validated = $request->validate([
+                'title' => 'nullable|string|max:255',
+                'tone' => 'sometimes|in:gold,paper,ink',
+                'position' => 'nullable|integer|min:0',
+                'active' => 'nullable|boolean',
+                'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
+            ]);
+
+            unset($validated['image_file']);
+
+            if ($request->hasFile('image_file')) {
+                $validated['image'] = $this->storeWebpImage($request->file('image_file'));
+
+                $this->deleteLocalBannerImage($banner->image);
+            }
+
+            $banner->update($validated);
+
+            \Illuminate\Support\Facades\Cache::forget('banners_all');
+
+            return response()->json(['data' => $banner]);
+        } catch (\Throwable $error) {
+            return $this->bannerSaveErrorResponse($error);
         }
-
-        $validated = $request->validate([
-            'title' => 'nullable|string|max:255',
-            'tone' => 'sometimes|in:gold,paper,ink',
-            'position' => 'nullable|integer|min:0',
-            'active' => 'nullable|boolean',
-            'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
-        ]);
-
-        unset($validated['image_file']);
-
-        if ($request->hasFile('image_file')) {
-            $validated['image'] = $this->storeWebpImage($request->file('image_file'));
-            $this->deleteLocalBannerImage($banner->image);
-        }
-
-        $banner->update($validated);
-
-        \Illuminate\Support\Facades\Cache::forget('banners_all');
-
-        return response()->json(['data' => $banner]);
     }
 
     // DELETE /api/banners/{id} - Admin only
@@ -131,67 +140,102 @@ class BannerController extends Controller
     {
         $directory = public_path('uploads/banners');
 
-        // Ensure directory exists with proper permissions
-        if (!is_dir($directory)) {
-            if (!mkdir($directory, 0777, true)) {
-                throw new \Exception('Failed to create uploads/banners directory.');
-            }
+        if (!is_dir($directory) && !@mkdir($directory, 0755, true)) {
+            throw new \RuntimeException('Failed to create uploads/banners directory.');
         }
 
-        // Make sure directory is writable
         if (!is_writable($directory)) {
-            if (!chmod($directory, 0777)) {
-                throw new \Exception('uploads/banners directory is not writable.');
-            }
+            throw new \RuntimeException('uploads/banners directory is not writable.');
         }
 
         $filename = 'banner-' . Str::uuid();
-        
-        // Try to save as WebP
         $webpPath = $directory . DIRECTORY_SEPARATOR . $filename . '.webp';
+
         if ($this->convertImagePathToWebp($file->getRealPath(), $webpPath)) {
-            chmod($webpPath, 0644);
-            return url('index.php/uploads/banners/' . $filename . '.webp');
+            @chmod($webpPath, 0644);
+            return $this->publicBannerImageUrl($webpPath);
         }
-        
-        // Fallback: copy original file if WebP conversion fails
-        $originalExtension = strtolower($file->getClientOriginalExtension());
-        $fallbackPath = $directory . DIRECTORY_SEPARATOR . $filename . '.' . $originalExtension;
-        
-        if ($file->copy($directory, $filename . '.' . $originalExtension)) {
-            chmod($fallbackPath, 0644);
-            return url('index.php/uploads/banners/' . $filename . '.' . $originalExtension);
+
+        if (is_file($webpPath)) {
+            @unlink($webpPath);
         }
-        
-        throw new \Exception('Unable to save image file.');
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
+        $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
+        $fallbackName = $filename . '.' . $extension;
+        $file->move($directory, $fallbackName);
+
+        $fallbackPath = $directory . DIRECTORY_SEPARATOR . $fallbackName;
+        @chmod($fallbackPath, 0644);
+
+        return $this->publicBannerImageUrl($fallbackPath);
+    }
+
+    private function bannerSaveErrorResponse(\Throwable $error)
+    {
+        report($error);
+
+        $message = config('app.debug')
+            ? $error->getMessage()
+            : 'Unable to save banner. Please make sure uploads/banners is writable and the selected image is valid.';
+
+        return response()->json([
+            'message' => $message,
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     private function convertImagePathToWebp(string $source, string $destination): bool
     {
+        if (!function_exists('imagewebp')) {
+            return false;
+        }
+
         $info = @getimagesize($source);
 
         if (!$info) {
             return false;
         }
 
-        $image = match ($info[2]) {
-            IMAGETYPE_JPEG => imagecreatefromjpeg($source),
-            IMAGETYPE_PNG => imagecreatefrompng($source),
-            IMAGETYPE_GIF => imagecreatefromgif($source),
-            IMAGETYPE_WEBP => imagecreatefromwebp($source),
-            IMAGETYPE_BMP => imagecreatefrombmp($source),
-            IMAGETYPE_AVIF => function_exists('imagecreatefromavif') ? imagecreatefromavif($source) : false,
-            default => false,
-        };
+        $type = $info[2] ?? null;
+        $loader = null;
+
+        if ($type === IMAGETYPE_JPEG && function_exists('imagecreatefromjpeg')) {
+            $loader = 'imagecreatefromjpeg';
+        } elseif ($type === IMAGETYPE_PNG && function_exists('imagecreatefrompng')) {
+            $loader = 'imagecreatefrompng';
+        } elseif ($type === IMAGETYPE_GIF && function_exists('imagecreatefromgif')) {
+            $loader = 'imagecreatefromgif';
+        } elseif ($type === IMAGETYPE_WEBP && function_exists('imagecreatefromwebp')) {
+            $loader = 'imagecreatefromwebp';
+        } elseif ($type === IMAGETYPE_BMP && function_exists('imagecreatefrombmp')) {
+            $loader = 'imagecreatefrombmp';
+        } elseif (defined('IMAGETYPE_AVIF') && $type === IMAGETYPE_AVIF && function_exists('imagecreatefromavif')) {
+            $loader = 'imagecreatefromavif';
+        }
+
+        if (!$loader) {
+            return false;
+        }
+
+        $image = @$loader($source);
 
         if (!$image) {
             return false;
         }
 
-        imagepalettetotruecolor($image);
-        imagealphablending($image, false);
-        imagesavealpha($image, true);
-        $saved = imagewebp($image, $destination, 82);
+        if (function_exists('imagepalettetotruecolor')) {
+            imagepalettetotruecolor($image);
+        }
+
+        if (function_exists('imagealphablending')) {
+            imagealphablending($image, false);
+        }
+
+        if (function_exists('imagesavealpha')) {
+            imagesavealpha($image, true);
+        }
+
+        $saved = @imagewebp($image, $destination, 82);
         imagedestroy($image);
 
         return $saved;
@@ -199,8 +243,7 @@ class BannerController extends Controller
 
     private function publicBannerImageUrl(string $path): string
     {
-        $filename = basename($path);
-        return url('index.php/uploads/banners/' . $filename);
+        return url('uploads/banners/' . basename($path));
     }
 
     private function deleteLocalBannerImage(?string $imageUrl): void
@@ -212,7 +255,7 @@ class BannerController extends Controller
         $path = public_path('uploads/banners/' . basename(parse_url($imageUrl, PHP_URL_PATH)));
 
         if (is_file($path)) {
-            unlink($path);
+            @unlink($path);
         }
     }
 }
