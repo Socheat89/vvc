@@ -153,6 +153,21 @@ class BannerController extends Controller
 
         $directory = $this->ensureBannerUploadDirectory();
         $filename = 'banner-' . Str::uuid();
+        $sourcePath = $file->getRealPath();
+        $webpPath = $directory . DIRECTORY_SEPARATOR . $filename . '.webp';
+
+        if ($sourcePath && $this->convertImagePathToWebp($sourcePath, $webpPath)) {
+            @chmod($webpPath, 0644);
+            return $this->publicBannerImageUrl($webpPath);
+        }
+
+        @unlink($webpPath);
+
+        return $this->storeOriginalBannerImage($file, $directory, $filename);
+    }
+
+    private function storeOriginalBannerImage(UploadedFile $file, string $directory, string $filename): string
+    {
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
         $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
         $imageName = $filename . '.' . $extension;
@@ -167,6 +182,68 @@ class BannerController extends Controller
         }
 
         return $this->publicBannerImageUrl($imagePath);
+    }
+
+    private function convertImagePathToWebp(string $source, string $destination): bool
+    {
+        if (!function_exists('imagewebp') || !is_readable($source)) {
+            return false;
+        }
+
+        $info = @getimagesize($source);
+
+        if (!$info) {
+            return false;
+        }
+
+        $type = $info[2] ?? null;
+        $loader = null;
+
+        if ($type === IMAGETYPE_JPEG && function_exists('imagecreatefromjpeg')) {
+            $loader = 'imagecreatefromjpeg';
+        } elseif ($type === IMAGETYPE_PNG && function_exists('imagecreatefrompng')) {
+            $loader = 'imagecreatefrompng';
+        } elseif ($type === IMAGETYPE_GIF && function_exists('imagecreatefromgif')) {
+            $loader = 'imagecreatefromgif';
+        } elseif ($type === IMAGETYPE_WEBP && function_exists('imagecreatefromwebp')) {
+            $loader = 'imagecreatefromwebp';
+        } elseif ($type === IMAGETYPE_BMP && function_exists('imagecreatefrombmp')) {
+            $loader = 'imagecreatefrombmp';
+        } elseif (defined('IMAGETYPE_AVIF') && $type === IMAGETYPE_AVIF && function_exists('imagecreatefromavif')) {
+            $loader = 'imagecreatefromavif';
+        }
+
+        if (!$loader) {
+            return false;
+        }
+
+        $image = @$loader($source);
+
+        if (!$image) {
+            return false;
+        }
+
+        if (function_exists('imagepalettetotruecolor')) {
+            @imagepalettetotruecolor($image);
+        }
+
+        if (function_exists('imagealphablending')) {
+            @imagealphablending($image, false);
+        }
+
+        if (function_exists('imagesavealpha')) {
+            @imagesavealpha($image, true);
+        }
+
+        $saved = @imagewebp($image, $destination, 82);
+        imagedestroy($image);
+
+        if (!$saved || !$this->isUsableImageFile($destination)) {
+            @unlink($destination);
+            return false;
+        }
+
+        return true;
     }
 
     private function bannerSaveErrorResponse(\Throwable $error)
