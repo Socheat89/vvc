@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class BannerController extends Controller
 {
@@ -60,7 +61,7 @@ class BannerController extends Controller
             }
 
             if ($request->hasFile('image_file')) {
-                $validated['image'] = $this->storeWebpImage($request->file('image_file'));
+                $validated['image'] = $this->storeBannerImage($request->file('image_file'));
             }
 
             $banner = Banner::create($validated);
@@ -68,6 +69,8 @@ class BannerController extends Controller
             \Illuminate\Support\Facades\Cache::forget('banners_all');
 
             return response()->json(['data' => $banner], Response::HTTP_CREATED);
+        } catch (ValidationException $error) {
+            throw $error;
         } catch (\Throwable $error) {
             return $this->bannerSaveErrorResponse($error);
         }
@@ -94,7 +97,7 @@ class BannerController extends Controller
             unset($validated['image_file']);
 
             if ($request->hasFile('image_file')) {
-                $validated['image'] = $this->storeWebpImage($request->file('image_file'));
+                $validated['image'] = $this->storeBannerImage($request->file('image_file'));
 
                 $this->deleteLocalBannerImage($banner->image);
             }
@@ -104,6 +107,8 @@ class BannerController extends Controller
             \Illuminate\Support\Facades\Cache::forget('banners_all');
 
             return response()->json(['data' => $banner]);
+        } catch (ValidationException $error) {
+            throw $error;
         } catch (\Throwable $error) {
             return $this->bannerSaveErrorResponse($error);
         }
@@ -136,44 +141,41 @@ class BannerController extends Controller
         ]);
     }
 
-    private function storeWebpImage(UploadedFile $file): string
+    private function storeBannerImage(UploadedFile $file): string
     {
-        $directory = public_path('uploads/banners');
-
-        if (!is_dir($directory) && !@mkdir($directory, 0755, true)) {
-            throw new \RuntimeException('Failed to create uploads/banners directory.');
+        if (!$file->isValid()) {
+            throw new \RuntimeException('Banner image upload failed: ' . $file->getErrorMessage());
         }
 
-        if (!is_writable($directory)) {
-            throw new \RuntimeException('uploads/banners directory is not writable.');
+        if ((int) $file->getSize() <= 0) {
+            throw new \RuntimeException('Banner image upload is empty.');
         }
 
+        $directory = $this->ensureBannerUploadDirectory();
         $filename = 'banner-' . Str::uuid();
-        $webpPath = $directory . DIRECTORY_SEPARATOR . $filename . '.webp';
-
-        if ($this->convertImagePathToWebp($file->getRealPath(), $webpPath)) {
-            @chmod($webpPath, 0644);
-            return $this->publicBannerImageUrl($webpPath);
-        }
-
-        if (is_file($webpPath)) {
-            @unlink($webpPath);
-        }
-
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
         $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
-        $fallbackName = $filename . '.' . $extension;
-        $file->move($directory, $fallbackName);
+        $imageName = $filename . '.' . $extension;
+        $file->move($directory, $imageName);
 
-        $fallbackPath = $directory . DIRECTORY_SEPARATOR . $fallbackName;
-        @chmod($fallbackPath, 0644);
+        $imagePath = $directory . DIRECTORY_SEPARATOR . $imageName;
+        @chmod($imagePath, 0644);
 
-        return $this->publicBannerImageUrl($fallbackPath);
+        if (!$this->isUsableImageFile($imagePath)) {
+            @unlink($imagePath);
+            throw new \RuntimeException('Unable to save banner image file.');
+        }
+
+        return $this->publicBannerImageUrl($imagePath);
     }
 
     private function bannerSaveErrorResponse(\Throwable $error)
     {
-        report($error);
+        try {
+            report($error);
+        } catch (\Throwable $reportError) {
+            // Keep the API response useful even if server logging/storage is misconfigured.
+        }
 
         $message = config('app.debug')
             ? $error->getMessage()
@@ -184,75 +186,62 @@ class BannerController extends Controller
         ], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
-    private function convertImagePathToWebp(string $source, string $destination): bool
-    {
-        if (!function_exists('imagewebp')) {
-            return false;
-        }
-
-        $info = @getimagesize($source);
-
-        if (!$info) {
-            return false;
-        }
-
-        $type = $info[2] ?? null;
-        $loader = null;
-
-        if ($type === IMAGETYPE_JPEG && function_exists('imagecreatefromjpeg')) {
-            $loader = 'imagecreatefromjpeg';
-        } elseif ($type === IMAGETYPE_PNG && function_exists('imagecreatefrompng')) {
-            $loader = 'imagecreatefrompng';
-        } elseif ($type === IMAGETYPE_GIF && function_exists('imagecreatefromgif')) {
-            $loader = 'imagecreatefromgif';
-        } elseif ($type === IMAGETYPE_WEBP && function_exists('imagecreatefromwebp')) {
-            $loader = 'imagecreatefromwebp';
-        } elseif ($type === IMAGETYPE_BMP && function_exists('imagecreatefrombmp')) {
-            $loader = 'imagecreatefrombmp';
-        } elseif (defined('IMAGETYPE_AVIF') && $type === IMAGETYPE_AVIF && function_exists('imagecreatefromavif')) {
-            $loader = 'imagecreatefromavif';
-        }
-
-        if (!$loader) {
-            return false;
-        }
-
-        $image = @$loader($source);
-
-        if (!$image) {
-            return false;
-        }
-
-        if (function_exists('imagepalettetotruecolor')) {
-            imagepalettetotruecolor($image);
-        }
-
-        if (function_exists('imagealphablending')) {
-            imagealphablending($image, false);
-        }
-
-        if (function_exists('imagesavealpha')) {
-            imagesavealpha($image, true);
-        }
-
-        $saved = @imagewebp($image, $destination, 82);
-        imagedestroy($image);
-
-        return $saved;
-    }
-
     private function publicBannerImageUrl(string $path): string
     {
-        return url('uploads/banners/' . basename($path));
+        $filename = basename($path);
+        return url('uploads/banners/' . $filename);
+    }
+
+    private function isUsableImageFile(string $path): bool
+    {
+        clearstatcache(true, $path);
+
+        return is_file($path)
+            && filesize($path) > 0
+            && @getimagesize($path) !== false;
+    }
+
+    private function ensureBannerUploadDirectory(): string
+    {
+        $directory = public_path('uploads/banners');
+
+        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
+            throw new \RuntimeException('Failed to create uploads/banners directory.');
+        }
+
+        if (!is_writable($directory)) {
+            @chmod($directory, 0775);
+        }
+
+        if (!is_writable($directory)) {
+            throw new \RuntimeException('uploads/banners directory is not writable.');
+        }
+
+        $testPath = $directory . DIRECTORY_SEPARATOR . '.write-test-' . uniqid('', true) . '.tmp';
+
+        if (@file_put_contents($testPath, 'ok') === false) {
+            throw new \RuntimeException('Unable to write a test file to uploads/banners.');
+        }
+
+        @unlink($testPath);
+
+        return $directory;
     }
 
     private function deleteLocalBannerImage(?string $imageUrl): void
     {
-        if (!$imageUrl || !str_contains($imageUrl, '/uploads/banners/')) {
+        if (!$imageUrl || strpos($imageUrl, '/uploads/banners/') === false) {
             return;
         }
 
-        $path = public_path('uploads/banners/' . basename(parse_url($imageUrl, PHP_URL_PATH)));
+        $urlPath = parse_url($imageUrl, PHP_URL_PATH) ?: $imageUrl;
+        $filename = basename(str_replace('\\', '/', $urlPath));
+
+        if (!$filename) {
+            return;
+        }
+
+        $path = public_path('uploads/banners/' . $filename);
 
         if (is_file($path)) {
             @unlink($path);

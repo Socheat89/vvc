@@ -246,7 +246,7 @@ const translations = {
       en: 'Helpful answers around use, care, and whether the product fits the customer need.',
     },
     featuredProductsKicker: {
-      kh: 'ផលិតផលណែនាំ',
+      kh: 'ការបង្ហាញផលិតផលខ្លីៗ',
       en: 'Featured Products',
     },
     featuredProductsTitle: {
@@ -254,8 +254,8 @@ const translations = {
       en: 'Fresh picks worth exploring',
     },
     featuredProductsDesc: {
-      kh: 'មើលជម្រើសថ្មីៗពី VVC ជាមួយព័ត៌មានសំខាន់ៗដែលជួយឲ្យការសម្រេចចិត្តកាន់តែងាយស្រួល។',
-      en: 'Browse recent VVC products with the essential details that make choosing easier.',
+      kh: 'មើលផលិតផលថ្មីៗរបស់យើង!',
+      en: 'Check out our latest products!',
     },
     viewAllProducts: {
       kh: 'មើលផលិតផលទាំងអស់',
@@ -318,12 +318,12 @@ const translations = {
       en: 'Start with the catalog or a category that matches what you are looking for.',
     },
     howStep2Title: {
-      kh: 'អានអត្តសញ្ញាណផលិតផល',
-      en: 'Read the product passport',
+      kh: 'យល់ដឹងពីផលិតផល',
+      en: 'Understand the product',
     },
     howStep2Desc: {
-      kh: 'មើលរឿងរ៉ាវ គុណភាព តម្លៃ ស្តុក និងព័ត៌មានសំខាន់ៗមុនពេលសម្រេចចិត្ត។',
-      en: 'Review the story, quality, price, stock, and key details before deciding.',
+      kh: 'អាចមើលព័ត៌មានសំខាន់ៗដូចជាគុណភាព និងព័ត៌មានសំខាន់ៗមុនពេលសម្រេចចិត្ត។',
+      en: 'You can view key details like quality and essentials before making a decision.',
     },
     howStep3Title: {
       kh: 'ជ្រើសរើសដោយទំនុកចិត្ត',

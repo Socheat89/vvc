@@ -115,16 +115,16 @@ const productShowLoadingCards = Array.from({ length: 4 }, (_, index) => index);
 
 const productShowText = {
   kicker: {
-    kh: 'Product Show',
-    en: 'Product Show',
+    kh: 'ស្វែងរកផលិតផលរបស់អ្នក!',
+    en: 'Discover Your Desired Products!',
   },
   title: {
-    kh: 'បង្ហាញផលិតផលតាមប្រភេទ',
-    en: 'Product Show by Category',
+    kh: 'ផែនទីប្រភេទផលិតផលរបស់យើង',
+    en: 'Explore Our Product Category Showcase',
   },
   desc: {
-    kh: 'មើលប្រភេទផលិតផលទាំងអស់របស់ VVC ជា card ស្អាតៗ និងបើកទៅមើលផលិតផលក្នុងប្រភេទនីមួយៗបានភ្លាម។',
-    en: 'Browse every VVC category as a clean product card and jump straight into the products inside it.',
+    kh: 'ងាយស្រួលនិងរីករាយក្នុងការស្វែងរកផលិតផលដែលអ្នកចង់បានតាមរយៈប្រភេទផលិតផលដ៏ស្អាតនិងសាមញ្ញរបស់យើង។',
+    en: 'Easily and enjoyably discover the products you want through our beautiful and simple product category showcase.',
   },
   category: {
     kh: 'ប្រភេទផលិតផល',
@@ -231,12 +231,6 @@ export default function Home() {
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [featuredError, setFeaturedError] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
-
-  const howSteps = [
-    { step: '01', titleKey: 'howStep1Title', descKey: 'howStep1Desc' },
-    { step: '02', titleKey: 'howStep2Title', descKey: 'howStep2Desc' },
-    { step: '03', titleKey: 'howStep3Title', descKey: 'howStep3Desc' },
-  ];
 
   const posterSlides = useMemo(() => {
     // If banners are loaded, use them; otherwise use default structure
@@ -596,32 +590,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-how-section">
-        <div className="home-how-layout mx-auto max-w-6xl px-4 pb-10 pt-16">
-          <div className="home-section-heading home-section-heading-left reveal">
-            <div>
-              <span>{t.howKicker[language]}</span>
-              <h2>{t.howTitle[language]}</h2>
-              <p>{t.howDesc[language]}</p>
-            </div>
-            <Link to="/products" className="home-section-link home-how-link">
-              {t.howCta[language]}
-            </Link>
-          </div>
-
-          <div className="home-how-steps reveal reveal-delay-1">
-            {howSteps.map((step) => (
-              <article key={step.step} className="home-how-step">
-                <div className="home-how-index">{step.step}</div>
-                <div>
-                  <h3>{t[step.titleKey][language]}</h3>
-                  <p>{t[step.descKey][language]}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
