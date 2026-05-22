@@ -153,15 +153,18 @@ class BannerController extends Controller
 
         $directory = $this->ensureBannerUploadDirectory();
         $filename = 'banner-' . Str::uuid();
-        $sourcePath = $file->getRealPath();
-        $webpPath = $directory . DIRECTORY_SEPARATOR . $filename . '.webp';
 
-        if ($sourcePath && $this->convertImagePathToWebp($sourcePath, $webpPath)) {
-            @chmod($webpPath, 0644);
-            return $this->publicBannerImageUrl($webpPath);
+        if ($this->shouldConvertBannerToWebp()) {
+            $sourcePath = $file->getRealPath();
+            $webpPath = $directory . DIRECTORY_SEPARATOR . $filename . '.webp';
+
+            if ($sourcePath && $this->convertImagePathToWebp($sourcePath, $webpPath)) {
+                @chmod($webpPath, 0644);
+                return $this->publicBannerImageUrl($webpPath);
+            }
+
+            @unlink($webpPath);
         }
-
-        @unlink($webpPath);
 
         return $this->storeOriginalBannerImage($file, $directory, $filename);
     }
@@ -269,13 +272,24 @@ class BannerController extends Controller
         return url('uploads/banners/' . $filename);
     }
 
+    private function shouldConvertBannerToWebp(): bool
+    {
+        return filter_var(env('BANNER_CONVERT_WEBP', false), FILTER_VALIDATE_BOOLEAN);
+    }
+
     private function isUsableImageFile(string $path): bool
     {
         clearstatcache(true, $path);
 
-        return is_file($path)
-            && filesize($path) > 0
-            && @getimagesize($path) !== false;
+        if (!is_file($path) || filesize($path) <= 0) {
+            return false;
+        }
+
+        if (@getimagesize($path) !== false) {
+            return true;
+        }
+
+        return strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'webp';
     }
 
     private function ensureBannerUploadDirectory(): string

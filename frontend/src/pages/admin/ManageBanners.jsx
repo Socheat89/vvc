@@ -61,6 +61,52 @@ const getApiErrorMessage = (error, fallback) => {
   return data?.message || error.message || fallback;
 };
 
+const convertImageFileToWebp = (file) => new Promise((resolve) => {
+  if (!file?.type?.startsWith('image/') || file.type === 'image/webp') {
+    resolve(file);
+    return;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+
+  image.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+
+    const context = canvas.getContext('2d');
+    if (!context || !canvas.width || !canvas.height) {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+      return;
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      URL.revokeObjectURL(objectUrl);
+
+      if (!blob || blob.size <= 0) {
+        resolve(file);
+        return;
+      }
+
+      const webpName = file.name.replace(/\.[^.]+$/, '') || 'banner';
+      resolve(new File([blob], `${webpName}.webp`, {
+        type: 'image/webp',
+        lastModified: Date.now(),
+      }));
+    }, 'image/webp', 0.86);
+  };
+
+  image.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    resolve(file);
+  };
+
+  image.src = objectUrl;
+});
+
 const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -161,19 +207,21 @@ export default function ManageBanners() {
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const uploadFile = await convertImageFileToWebp(file);
+
       setFormData((prev) => ({
         ...prev,
-        imageFile: file,
+        imageFile: uploadFile,
       }));
       
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target.result);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(uploadFile);
     }
   };
 
