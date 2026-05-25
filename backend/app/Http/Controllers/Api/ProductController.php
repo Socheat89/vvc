@@ -262,12 +262,22 @@ class ProductController extends Controller
             \Illuminate\Support\Facades\Cache::forget('products_all');
             \Illuminate\Support\Facades\Cache::forget('categories_all');
 
+            $drawingsDebug = [];
+            foreach ($sheet->getDrawingCollection() as $drawing) {
+                $drawingsDebug[] = $drawing->getCoordinates() . ' (' . $drawing->getName() . ')';
+            }
+
             return response()->json([
                 'message' => 'Products imported successfully.',
                 'created' => $created,
                 'updated' => $updated,
                 'skipped_count' => count($skipped),
                 'skipped' => array_slice($skipped, 0, 20),
+                'debug_info' => [
+                    'image_column_header' => $headerMap['image'] ?? 'Not found',
+                    'total_drawings_in_excel' => count($sheet->getDrawingCollection()),
+                    'drawings_detected_at' => $drawingsDebug,
+                ]
             ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Import error: ' . $e->getMessage(), [
@@ -458,16 +468,29 @@ class ProductController extends Controller
     private function extractImagesByRow($sheet, ?string $imageColumn): array
     {
         if (!$imageColumn) {
+            \Illuminate\Support\Facades\Log::info('extractImagesByRow: No image column detected in header map.');
             return [];
         }
 
         $images = [];
         $directory = $this->ensureProductUploadDirectory();
+        
+        $imageColumnIndex = Coordinate::columnIndexFromString($imageColumn);
+        $drawings = $sheet->getDrawingCollection();
+        
+        \Illuminate\Support\Facades\Log::info('extractImagesByRow: Total drawings in sheet = ' . count($drawings) . '. Target image column = ' . $imageColumn . ' (index ' . $imageColumnIndex . ')');
 
-        foreach ($sheet->getDrawingCollection() as $drawing) {
-            [$column, $row] = Coordinate::coordinateFromString($drawing->getCoordinates());
+        foreach ($drawings as $drawing) {
+            $coordinates = $drawing->getCoordinates();
+            [$column, $row] = Coordinate::coordinateFromString($coordinates);
+            $columnIndex = Coordinate::columnIndexFromString($column);
+            
+            \Illuminate\Support\Facades\Log::info('Drawing details: Coordinates = ' . $coordinates . ', Name = ' . $drawing->getName() . ', Class = ' . get_class($drawing));
 
-            if ($column !== $imageColumn) {
+            // Extremely robust: allow matching if the drawing's column is within 2 columns offset from the target image column
+            // This handles cases where images are slightly shifted or span multiple columns
+            if (abs($columnIndex - $imageColumnIndex) > 2) {
+                \Illuminate\Support\Facades\Log::info('Drawing at ' . $coordinates . ' skipped (column index ' . $columnIndex . ' is too far from target ' . $imageColumnIndex . ')');
                 continue;
             }
 
@@ -475,6 +498,9 @@ class ProductController extends Controller
 
             if ($savedPath) {
                 $images[(int) $row] = $this->publicProductImageUrl($savedPath);
+                \Illuminate\Support\Facades\Log::info('Drawing at ' . $coordinates . ' successfully saved as: ' . $savedPath);
+            } else {
+                \Illuminate\Support\Facades\Log::info('Drawing at ' . $coordinates . ' failed to save.');
             }
         }
 
@@ -486,11 +512,33 @@ class ProductController extends Controller
         $baseFilename = 'product-' . Str::uuid();
 
         if ($drawing instanceof MemoryDrawing) {
-            $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
-            if (function_exists('imagewebp') && imagewebp($drawing->getImageResource(), $path, 82)) {
-                @chmod($path, 0644);
-                return $path;
+            // Try WebP first
+            if (function_exists('imagewebp')) {
+                $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
+                if (@imagewebp($drawing->getImageResource(), $path, 82)) {
+                    @chmod($path, 0644);
+                    return $path;
+                }
             }
+
+            // Fallback 1: PNG (lossless, standard)
+            if (function_exists('imagepng')) {
+                $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.png';
+                if (@imagepng($drawing->getImageResource(), $path)) {
+                    @chmod($path, 0644);
+                    return $path;
+                }
+            }
+
+            // Fallback 2: JPEG
+            if (function_exists('imagejpeg')) {
+                $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.jpg';
+                if (@imagejpeg($drawing->getImageResource(), $path, 85)) {
+                    @chmod($path, 0644);
+                    return $path;
+                }
+            }
+
             return null;
         }
 
