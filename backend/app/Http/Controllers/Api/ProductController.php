@@ -446,11 +446,7 @@ class ProductController extends Controller
         }
 
         $images = [];
-        $directory = public_path('uploads/products');
-
-        if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
-        }
+        $directory = $this->ensureProductUploadDirectory();
 
         foreach ($sheet->getDrawingCollection() as $drawing) {
             [$column, $row] = Coordinate::coordinateFromString($drawing->getCoordinates());
@@ -475,11 +471,23 @@ class ProductController extends Controller
         $path = $directory . DIRECTORY_SEPARATOR . $filename;
 
         if ($drawing instanceof MemoryDrawing) {
-            return imagewebp($drawing->getImageResource(), $path, 82) ? $path : null;
+            if (imagewebp($drawing->getImageResource(), $path, 82)) {
+                @chmod($path, 0644);
+                return $path;
+            }
+            return null;
         }
 
         if ($drawing instanceof Drawing && method_exists($drawing, 'getPath')) {
-            return $this->convertImagePathToWebp($drawing->getPath(), $path) ? $path : null;
+            $sourcePath = $drawing->getPath();
+            if (!is_file($sourcePath)) {
+                return null;
+            }
+
+            if ($this->convertImagePathToWebp($sourcePath, $path)) {
+                @chmod($path, 0644);
+                return $path;
+            }
         }
 
         return null;
@@ -487,19 +495,42 @@ class ProductController extends Controller
 
     private function storeWebpImage(UploadedFile $file): string
     {
-        $directory = public_path('uploads/products');
-
-        if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
-        }
-
+        $directory = $this->ensureProductUploadDirectory();
         $path = $directory . DIRECTORY_SEPARATOR . 'product-' . Str::uuid() . '.webp';
 
         if (!$this->convertImagePathToWebp($file->getRealPath(), $path)) {
             abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Unable to convert image to WebP.');
         }
 
+        @chmod($path, 0644);
         return $this->publicProductImageUrl($path);
+    }
+
+    private function ensureProductUploadDirectory(): string
+    {
+        $directory = public_path('uploads/products');
+
+        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
+            throw new \RuntimeException('Failed to create uploads/products directory.');
+        }
+
+        if (!is_writable($directory)) {
+            @chmod($directory, 0775);
+        }
+
+        if (!is_writable($directory)) {
+            throw new \RuntimeException('uploads/products directory is not writable.');
+        }
+
+        $testPath = $directory . DIRECTORY_SEPARATOR . '.write-test-' . uniqid('', true) . '.tmp';
+
+        if (@file_put_contents($testPath, 'ok') === false) {
+            throw new \RuntimeException('Unable to write a test file to uploads/products.');
+        }
+
+        @unlink($testPath);
+
+        return $directory;
     }
 
     private function convertImagePathToWebp(string $source, string $destination): bool
