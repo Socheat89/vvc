@@ -263,8 +263,28 @@ class ProductController extends Controller
             \Illuminate\Support\Facades\Cache::forget('categories_all');
 
             $drawingsDebug = [];
+            $saveResults   = [];
             foreach ($sheet->getDrawingCollection() as $drawing) {
                 $drawingsDebug[] = $drawing->getCoordinates() . ' (' . $drawing->getName() . ')';
+            }
+
+            // Sample first 3 drawing save results for quick debug visibility in the response
+            $sampleDrawings = array_slice(iterator_to_array($sheet->getDrawingCollection()), 0, 3);
+            $sampleDir      = $this->ensureProductUploadDirectory();
+            foreach ($sampleDrawings as $sd) {
+                $class   = get_class($sd);
+                $coords  = $sd->getCoordinates();
+                $tryPath = null;
+                if ($sd instanceof Drawing && method_exists($sd, 'getPath')) {
+                    $tryPath = $sd->getPath();
+                }
+                $saved = $this->saveDrawing($sd, $sampleDir);
+                $saveResults[] = [
+                    'coordinates' => $coords,
+                    'class'       => $class,
+                    'source_path' => $tryPath,
+                    'saved_to'    => $saved,
+                ];
             }
 
             return response()->json([
@@ -274,9 +294,17 @@ class ProductController extends Controller
                 'skipped_count' => count($skipped),
                 'skipped' => array_slice($skipped, 0, 20),
                 'debug_info' => [
-                    'image_column_header' => $headerMap['image'] ?? 'Not found',
+                    'image_column_header'    => $headerMap['image'] ?? 'Not found',
                     'total_drawings_in_excel' => count($sheet->getDrawingCollection()),
-                    'drawings_detected_at' => $drawingsDebug,
+                    'drawings_detected_at'   => array_slice($drawingsDebug, 0, 20),
+                    'save_results_sample'    => $saveResults,
+                    'upload_directory'       => $sampleDir,
+                    'gd_functions'           => [
+                        'imagepng'  => function_exists('imagepng'),
+                        'imagejpeg' => function_exists('imagejpeg'),
+                        'imagewebp' => function_exists('imagewebp'),
+                    ],
+                    'dir_writable' => is_writable($sampleDir),
                 ]
             ]);
         } catch (\Throwable $e) {
@@ -510,41 +538,54 @@ class ProductController extends Controller
     private function saveDrawing($drawing, string $directory): ?string
     {
         $baseFilename = 'product-' . Str::uuid();
+        $drawingClass  = get_class($drawing);
+
+        \Illuminate\Support\Facades\Log::info("saveDrawing START — class={$drawingClass}, dir={$directory}");
 
         if ($drawing instanceof MemoryDrawing) {
+            $resource = $drawing->getImageResource();
+            \Illuminate\Support\Facades\Log::info('MemoryDrawing — resource=' . (is_resource($resource) ? 'OK' : 'NULL'));
+
+            if (!is_resource($resource)) {
+                \Illuminate\Support\Facades\Log::warning('MemoryDrawing: getImageResource() returned non-resource — skipping.');
+                return null;
+            }
+
             // Try WebP first
             if (function_exists('imagewebp')) {
                 $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
-                if (@imagewebp($drawing->getImageResource(), $path, 82)) {
-                    @chmod($path, 0644);
-                    return $path;
-                }
+                $ok = @imagewebp($resource, $path, 82);
+                \Illuminate\Support\Facades\Log::info("imagewebp => " . ($ok ? "OK: {$path}" : 'FAILED'));
+                if ($ok) { @chmod($path, 0644); return $path; }
             }
 
             // Fallback 1: PNG (lossless, standard)
             if (function_exists('imagepng')) {
                 $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.png';
-                if (@imagepng($drawing->getImageResource(), $path)) {
-                    @chmod($path, 0644);
-                    return $path;
-                }
+                $ok = @imagepng($resource, $path);
+                \Illuminate\Support\Facades\Log::info("imagepng => " . ($ok ? "OK: {$path}" : 'FAILED'));
+                if ($ok) { @chmod($path, 0644); return $path; }
             }
 
             // Fallback 2: JPEG
             if (function_exists('imagejpeg')) {
                 $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.jpg';
-                if (@imagejpeg($drawing->getImageResource(), $path, 85)) {
-                    @chmod($path, 0644);
-                    return $path;
-                }
+                $ok = @imagejpeg($resource, $path, 85);
+                \Illuminate\Support\Facades\Log::info("imagejpeg => " . ($ok ? "OK: {$path}" : 'FAILED'));
+                if ($ok) { @chmod($path, 0644); return $path; }
             }
 
+            \Illuminate\Support\Facades\Log::warning('MemoryDrawing: all GD functions failed to save image.');
             return null;
         }
 
         if ($drawing instanceof Drawing && method_exists($drawing, 'getPath')) {
             $sourcePath = $drawing->getPath();
-            if (!is_file($sourcePath)) {
+            $fileExists = is_file($sourcePath);
+            \Illuminate\Support\Facades\Log::info("Drawing — getPath()={$sourcePath}, is_file=" . ($fileExists ? 'true' : 'false'));
+
+            if (!$fileExists) {
+                \Illuminate\Support\Facades\Log::warning("Drawing: source file does not exist at path: {$sourcePath}");
                 return null;
             }
 
@@ -552,6 +593,7 @@ class ProductController extends Controller
             $webpPath = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
             if ($this->convertImagePathToWebp($sourcePath, $webpPath)) {
                 @chmod($webpPath, 0644);
+                \Illuminate\Support\Facades\Log::info("Drawing: saved as WebP at {$webpPath}");
                 return $webpPath;
             }
 
@@ -559,12 +601,12 @@ class ProductController extends Controller
             $extension = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) ?: 'jpg';
             $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
             $originalPath = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.' . $extension;
-            if (@copy($sourcePath, $originalPath)) {
-                @chmod($originalPath, 0644);
-                return $originalPath;
-            }
+            $ok = @copy($sourcePath, $originalPath);
+            \Illuminate\Support\Facades\Log::info("Drawing copy => " . ($ok ? "OK: {$originalPath}" : 'FAILED'));
+            if ($ok) { @chmod($originalPath, 0644); return $originalPath; }
         }
 
+        \Illuminate\Support\Facades\Log::warning("saveDrawing: unhandled drawing class or save failed — class={$drawingClass}");
         return null;
     }
 
