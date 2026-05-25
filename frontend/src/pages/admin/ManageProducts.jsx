@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { productService, categoryService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
+import BackgroundRemovedImage from '../../components/BackgroundRemovedImage';
+import { getBackgroundRemovedImageFile } from '../../utils/backgroundRemoval';
 import { getProductDisplayName } from '../../utils/productDisplay';
 
 const emptyForm = {
@@ -17,6 +19,46 @@ const emptyForm = {
 const ITEMS_PER_PAGE = 10;
 const stockFilters = ['all', 'inStock', 'lowStock', 'outOfStock'];
 const sortOptions = ['newest', 'nameAsc', 'priceAsc', 'priceDesc', 'stockAsc', 'stockDesc'];
+const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
+
+const extractUploadPath = (value) => {
+  const normalizedValue = String(value || '').trim().replace(/\\/g, '/');
+  const lowerValue = normalizedValue.toLowerCase();
+  const productUploadIndex = lowerValue.indexOf('uploads/products/');
+  const uploadIndex = lowerValue.indexOf('uploads/');
+
+  if (productUploadIndex >= 0) {
+    return normalizedValue.slice(productUploadIndex).replace(/^\/+/, '');
+  }
+
+  if (uploadIndex >= 0) {
+    return normalizedValue.slice(uploadIndex).replace(/^\/+/, '');
+  }
+
+  return '';
+};
+
+const getProductImageUrl = (image) => {
+  if (!image) return '';
+  const rawImage = String(image).trim().replace(/\\/g, '/');
+  if (!rawImage) return '';
+  if (/^(data:|blob:)/i.test(rawImage)) return rawImage;
+
+  const uploadPath = extractUploadPath(rawImage);
+  if (uploadPath) {
+    return `${PUBLIC_ASSET_BASE}/${uploadPath}`;
+  }
+
+  if (/^https?:\/\//i.test(rawImage)) {
+    return rawImage;
+  }
+
+  let imagePath = rawImage.replace(/^\/+/, '');
+  imagePath = imagePath.replace(/^public\//i, '').replace(/^backend\/public\//i, '');
+
+  return `${PRODUCT_UPLOAD_BASE}/${imagePath}`;
+};
 
 const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,7 +110,7 @@ const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
   );
 };
 
-function buildProductPayload(data) {
+async function buildProductPayload(data, backgroundRemoveFailedMessage) {
   const payload = {
     name: data.name.trim(),
     description: data.description.trim(),
@@ -82,6 +124,7 @@ function buildProductPayload(data) {
   }
 
   const formData = new FormData();
+  let imageFile = data.imageFile;
 
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -89,7 +132,14 @@ function buildProductPayload(data) {
     }
   });
 
-  formData.append('image_file', data.imageFile, data.imageFile.name);
+  try {
+    imageFile = await getBackgroundRemovedImageFile(data.imageFile, data.imageFile.name);
+  } catch (error) {
+    console.error(error);
+    throw new Error(backgroundRemoveFailedMessage);
+  }
+
+  formData.append('image_file', imageFile, imageFile.name);
 
   return formData;
 }
@@ -137,6 +187,14 @@ export default function ManageProducts() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageErrors, setImageErrors] = useState({});
+  const [backgroundRemoving, setBackgroundRemoving] = useState(false);
+  const [backgroundRemovalProgress, setBackgroundRemovalProgress] = useState({
+    current: 0,
+    total: 0,
+    failed: 0,
+  });
+  const [backgroundRemovalMessage, setBackgroundRemovalMessage] = useState('');
   const [showImportTip, setShowImportTip] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -168,6 +226,7 @@ export default function ManageProducts() {
       ]);
       setProducts(productsRes.data.data || []);
       setCategories(categoriesRes.data.data || []);
+      setImageErrors({});
       setFormError(null);
     } catch (err) {
       setFormError(t.loadFailed[language]);
@@ -295,7 +354,7 @@ export default function ManageProducts() {
       imageFile: null,
       category_id: product.category_id || '',
     });
-    setImagePreview(product.image || null);
+    setImagePreview(getProductImageUrl(product.image) || null);
     setFormError(null);
     setShowForm(true);
   };
@@ -309,7 +368,7 @@ export default function ManageProducts() {
       URL.revokeObjectURL(imagePreview);
     }
 
-    setImagePreview(file ? URL.createObjectURL(file) : formData.image || null);
+    setImagePreview(file ? URL.createObjectURL(file) : getProductImageUrl(formData.image) || null);
   };
 
   const handleImportClick = () => {
@@ -325,6 +384,7 @@ export default function ManageProducts() {
       setImporting(true);
       setFormError(null);
       setImportResult(null);
+      setBackgroundRemovalMessage('');
       const response = await productService.import(file);
       setImportResult(response.data);
       await fetchData();
@@ -337,13 +397,69 @@ export default function ManageProducts() {
     }
   };
 
+  const handleRemoveBackgroundForExisting = async () => {
+    const productsWithImages = filteredProducts.filter((product) => getProductImageUrl(product.image));
+
+    if (productsWithImages.length === 0 || backgroundRemoving) return;
+
+    const confirmed = window.confirm(`${t.removeBackgroundConfirm[language]} (${productsWithImages.length})`);
+    if (!confirmed) return;
+
+    let failed = 0;
+
+    try {
+      setBackgroundRemoving(true);
+      setBackgroundRemovalMessage('');
+      setFormError(null);
+      setBackgroundRemovalProgress({
+        current: 0,
+        total: productsWithImages.length,
+        failed: 0,
+      });
+
+      for (let index = 0; index < productsWithImages.length; index += 1) {
+        const product = productsWithImages[index];
+
+        try {
+          const transparentFile = await getBackgroundRemovedImageFile(
+            getProductImageUrl(product.image),
+            `product-${product.id}.png`
+          );
+          const payload = new FormData();
+          payload.append('image_file', transparentFile, transparentFile.name);
+          await productService.update(product.id, payload);
+        } catch (error) {
+          failed += 1;
+          console.error(error);
+        } finally {
+          setBackgroundRemovalProgress({
+            current: index + 1,
+            total: productsWithImages.length,
+            failed,
+          });
+        }
+      }
+
+      await fetchData();
+
+      setBackgroundRemovalMessage(
+        failed
+          ? `${t.removeBackgroundFailed[language]} (${productsWithImages.length - failed}/${productsWithImages.length})`
+          : `${t.removeBackgroundSuccess[language]} (${productsWithImages.length})`
+      );
+    } finally {
+      setBackgroundRemoving(false);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
 
     try {
       setSaving(true);
       setFormError(null);
-      const payload = buildProductPayload(formData);
+      setBackgroundRemovalMessage('');
+      const payload = await buildProductPayload(formData, t.removeBackgroundFailed[language]);
 
       if (editingId) {
         await productService.update(editingId, payload);
@@ -357,7 +473,7 @@ export default function ManageProducts() {
       setFormData(emptyForm);
       setImagePreview(null);
     } catch (err) {
-      setFormError(err.response?.data?.message || t.saveFailed[language]);
+      setFormError(err.response?.data?.message || err.message || t.saveFailed[language]);
       console.error(err);
     } finally {
       setSaving(false);
@@ -452,10 +568,20 @@ export default function ManageProducts() {
           <button
             type="button"
             onClick={handleImportClick}
-            disabled={importing}
+            disabled={importing || backgroundRemoving}
             className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {importing ? t.importing[language] : t.importExcel[language]}
+          </button>
+          <button
+            type="button"
+            onClick={handleRemoveBackgroundForExisting}
+            disabled={backgroundRemoving || filteredProducts.every((product) => !getProductImageUrl(product.image))}
+            className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {backgroundRemoving
+              ? `${t.removingBackground[language]} ${backgroundRemovalProgress.current}/${backgroundRemovalProgress.total}`
+              : t.removeBackground[language]}
           </button>
           <button onClick={handleAdd} className="btn-primary">
             <span aria-hidden="true">+</span>
@@ -474,6 +600,19 @@ export default function ManageProducts() {
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           {t.importSuccess[language]} {t.created[language]}: {importResult.created || 0}, {t.updated[language]}:{' '}
           {importResult.updated || 0}, {t.skipped[language]}: {importResult.skipped_count || 0}
+        </div>
+      )}
+
+      {backgroundRemovalMessage && (
+        <div className={`rounded-lg border px-4 py-3 text-sm ${
+          backgroundRemovalProgress.failed > 0
+            ? 'border-amber-200 bg-amber-50 text-amber-800'
+            : 'border-emerald-200 bg-emerald-50 text-emerald-800'
+        }`}>
+          {backgroundRemovalMessage}
+          {backgroundRemovalProgress.failed > 0 && (
+            <span> {t.skipped[language]}: {backgroundRemovalProgress.failed}</span>
+          )}
         </div>
       )}
 
@@ -608,8 +747,12 @@ export default function ManageProducts() {
                 />
                 <p className="mt-2 text-xs text-slate-500">{t.imageUploadHelp[language]}</p>
                 {imagePreview && (
-                  <div className="mt-3 h-24 w-24 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                    <img src={imagePreview} alt={formData.name || t.imageUpload[language]} className="h-full w-full object-cover" />
+                  <div className="mt-3 h-24 w-24 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                    <BackgroundRemovedImage
+                      src={imagePreview}
+                      alt={formData.name || t.imageUpload[language]}
+                      className="h-full w-full object-contain p-1.5"
+                    />
                   </div>
                 )}
               </div>
@@ -767,14 +910,21 @@ export default function ManageProducts() {
                 const isStockBusy = stockUpdatingId === product.id;
                 const isDeleting = deletingId === product.id;
                 const productName = getProductDisplayName(product, language);
+                const productImageUrl = getProductImageUrl(product.image);
+                const hasProductImage = productImageUrl && !imageErrors[product.id];
 
                 return (
                   <tr key={product.id} className="border-b border-white/70 transition hover:bg-white/60">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-14 w-14 overflow-hidden rounded-lg bg-slate-100">
-                          {product.image ? (
-                            <img src={product.image} alt={productName} className="h-full w-full object-cover" />
+                        <div className="h-14 w-14 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                          {hasProductImage ? (
+                            <BackgroundRemovedImage
+                              src={productImageUrl}
+                              alt={productName}
+                              className="h-full w-full object-contain p-1"
+                              onError={() => setImageErrors((current) => ({ ...current, [product.id]: true }))}
+                            />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-400">
                               VVC

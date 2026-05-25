@@ -94,8 +94,8 @@ const translations = {
       en: 'Facebook',
     },
     copyright: {
-      kh: '© 2024 VVC. បង្កើតសម្រាប់ដំណើរផលិតផលសម័យថ្មី។',
-      en: '© 2024 VVC. Crafted for modern product journeys.',
+      kh: '© 2024 VVC. រក្សារសិទ្ធគ្រប់យ៉ាង។',
+      en: '© 2024 VVC. All rights reserved.',
     },
   },
 
@@ -342,44 +342,44 @@ const translations = {
   // ===== ABOUT PAGE =====
   aboutPage: {
     tagline: {
-      kh: 'អំពីក្រុមហ៊ុន',
-      en: 'About the Company',
+      kh: 'អំពី VVC',
+      en: 'About VVC',
     },
     title: {
       kh: 'Van Van Cambodia',
       en: 'Van Van Cambodia',
     },
     titleSpan: {
-      kh: 'ជួយឲ្យអ្នកស្គាល់ផលិតផលឲ្យច្បាស់',
-      en: 'helps people understand products clearly',
+      kh: 'ស្គាល់ផលិតផល មុនពេលជ្រើសរើស',
+      en: 'know products before choosing',
     },
     heroDesc: {
-      kh: 'យើងរៀបចំព័ត៌មានផលិតផលឲ្យងាយយល់ ដើម្បីឲ្យអតិថិជនមើលឃើញរឿងរ៉ាវ គុណភាព ការប្រើប្រាស់ និងតម្លៃពិតមុនពេលជ្រើសរើស។',
-      en: 'We organize product information into a clear, human guide so customers can understand the story, quality, use, and real value before choosing.',
+      kh: 'VVC បង្ហាញព័ត៌មានផលិតផលឱ្យខ្លី ច្បាស់ និងងាយយល់។ អ្នកអាចមើលគុណភាព ការប្រើប្រាស់ និងចំណុចសំខាន់ៗបានលឿន។',
+      en: 'VVC makes product information short, clear, and easy to understand. See quality, use, and key details faster.',
     },
     primaryCta: {
       kh: 'មើលផលិតផល',
       en: 'View Products',
     },
     secondaryCta: {
-      kh: 'មើលគុណតម្លៃ',
-      en: 'See Our Values',
+      kh: 'មើលចំណុចសំខាន់',
+      en: 'See Highlights',
     },
     brandNote: {
-      kh: 'ប្រវត្តិក្រុមហ៊ុន',
-      en: 'Company Profile',
+      kh: 'យើងជានរណា',
+      en: 'Who We Are',
     },
     identityTitle: {
       kh: 'VVC',
       en: 'VVC',
     },
     identityDesc: {
-      kh: 'ផែនទីផលិតផលសម្រាប់ការជ្រើសរើសប្រកបដោយទំនុកចិត្ត',
-      en: 'A product atlas for confident decisions',
+      kh: 'ជួយឱ្យអ្នកជ្រើសរើសបានច្បាស់ និងមានទំនុកចិត្ត',
+      en: 'Helping people choose with clarity and confidence',
     },
     chipStory: {
-      kh: 'រឿងរ៉ាវ',
-      en: 'Story',
+      kh: 'ព័ត៌មានខ្លី',
+      en: 'Short Info',
     },
     chipQuality: {
       kh: 'គុណភាព',
@@ -426,52 +426,52 @@ const translations = {
       en: 'Cambodia based',
     },
     missionKicker: {
-      kh: 'បេសកកម្ម',
-      en: 'Mission',
+      kh: 'គោលបំណង',
+      en: 'Purpose',
     },
     missionTitle: {
-      kh: 'បង្កើតការជ្រើសរើសផលិតផលឲ្យមានន័យ',
-      en: 'Make product discovery more meaningful',
+      kh: 'ធ្វើឱ្យព័ត៌មានផលិតផលងាយយល់',
+      en: 'Make product information easier to understand',
     },
     missionDesc: {
-      kh: 'VVC ផ្តោតលើការបង្ហាញផលិតផលជាមួយបរិបទពេញលេញ មិនមែនត្រឹមតែឈ្មោះ តម្លៃ និងរូបភាពទេ។ រាល់ព័ត៌មានត្រូវបានរៀបចំឲ្យសាមញ្ញ ច្បាស់ និងមានប្រយោជន៍សម្រាប់អ្នកប្រើប្រាស់។',
-      en: 'VVC focuses on presenting products with complete context, not only a name, price, and image. Every detail is shaped to feel simple, clear, and useful for real customers.',
+      kh: 'យើងប្រមូលព័ត៌មានសំខាន់ៗ រួចរៀបចំជាភាសាសាមញ្ញ ដើម្បីឱ្យអតិថិជនសម្រេចចិត្តបានងាយ។',
+      en: 'We collect the important details and present them simply, so customers can decide more easily.',
     },
     missionQuote: {
-      kh: 'យើងជឿថា ផលិតផលល្អគួរតែមានរឿងរ៉ាវច្បាស់ គុណភាពដែលអាចទុកចិត្តបាន និងការណែនាំដែលជួយឲ្យអតិថិជនជ្រើសរើសដោយមានទំនុកចិត្ត។',
-      en: 'We believe a good product deserves a clear story, dependable quality, and guidance that helps customers choose with confidence.',
+      kh: 'ផលិតផលល្អគួរមានព័ត៌មានច្បាស់ និងការណែនាំត្រឹមត្រូវ។',
+      en: 'Good products deserve clear information and helpful guidance.',
     },
     valuesKicker: {
       kh: 'គុណតម្លៃ',
       en: 'Values',
     },
     valuesTitle: {
-      kh: 'អ្វីដែលយើងផ្តោត',
-      en: 'What We Focus On',
+      kh: 'ចំណុចសំខាន់របស់យើង',
+      en: 'Our Main Focus',
     },
     value1Title: {
-      kh: 'រឿងរ៉ាវច្បាស់',
-      en: 'Clear Product Story',
+      kh: 'ខ្លី និងច្បាស់',
+      en: 'Short and Clear',
     },
     value1Desc: {
-      kh: 'យើងរៀបចំព័ត៌មានពីគោលបំណង ការរចនា និងអត្ថប្រយោជន៍របស់ផលិតផលឲ្យអានងាយ និងយល់លឿន។',
-      en: 'We organize purpose, design, and benefits into a readable flow that helps customers understand faster.',
+      kh: 'ព័ត៌មានសំខាន់ៗត្រូវបានសរសេរឱ្យអានងាយ។',
+      en: 'Important details are written in an easy-to-read way.',
     },
     value2Title: {
-      kh: 'គុណភាពមុនគេ',
-      en: 'Quality First',
+      kh: 'គុណភាពទុកចិត្តបាន',
+      en: 'Trusted Quality',
     },
     value2Desc: {
-      kh: 'យើងគិតពីសម្ភារៈ ការប្រើប្រាស់ និងចំណុចដែលអាចជួយបង្ហាញភាពទុកចិត្តបានរបស់ផលិតផល។',
-      en: 'We look at materials, use, and the checkpoints that make a product easier to trust.',
+      kh: 'យើងបង្ហាញសម្ភារៈ ការប្រើប្រាស់ និងចំណុចដែលគួរដឹង។',
+      en: 'We show materials, use, and the details worth knowing.',
     },
     value3Title: {
-      kh: 'ការណែនាំមានប្រយោជន៍',
-      en: 'Useful Guidance',
+      kh: 'ជួយជ្រើសរើស',
+      en: 'Helpful Choices',
     },
     value3Desc: {
-      kh: 'យើងចង់ឲ្យអតិថិជនទទួលបានចម្លើយជាក់ស្តែង មុនពេលសម្រេចចិត្តលើផលិតផលណាមួយ។',
-      en: 'We want customers to get practical answers before making a decision about any product.',
+      kh: 'អតិថិជនទទួលបានព័ត៌មានដែលជួយសម្រេចចិត្តបានលឿន។',
+      en: 'Customers get information that helps them decide faster.',
     },
     processKicker: {
       kh: 'របៀបធ្វើការ',
@@ -514,16 +514,16 @@ const translations = {
       en: 'Continue sharing guidance so customers can use products with more confidence.',
     },
     ctaTitle: {
-      kh: 'ចង់ស្គាល់ផលិតផលឲ្យកាន់តែច្បាស់?',
-      en: 'Want to understand products more clearly?',
+      kh: 'ចង់រកផលិតផលដែលសមនឹងអ្នក?',
+      en: 'Want to find the right product?',
     },
     ctaDesc: {
-      kh: 'ចាប់ផ្តើមពីបញ្ជីផលិតផលរបស់ VVC ហើយស្វែងរកព័ត៌មានដែលជួយឲ្យការជ្រើសរើសមានទំនុកចិត្ត។',
-      en: 'Start with the VVC product list and discover details that make each choice feel more confident.',
+      kh: 'ចូលមើលបញ្ជីផលិតផល ដើម្បីប្រៀបធៀប និងជ្រើសរើសបានងាយ។',
+      en: 'Browse the product list, compare details, and choose more easily.',
     },
     ctaButton: {
-      kh: 'ចាប់ផ្តើមស្វែងរក',
-      en: 'Start Exploring',
+      kh: 'មើលផលិតផល',
+      en: 'View Products',
     },
   },
 
@@ -1520,6 +1520,26 @@ const translations = {
     imageUploadHelp: {
       kh: 'ជ្រើសរើស JPG, PNG, WebP, GIF, BMP ឬ AVIF។ ប្រព័ន្ធនឹងបម្លែងទៅជា WebP ដោយស្វ័យប្រវត្តិ។',
       en: 'Choose JPG, PNG, WebP, GIF, BMP, or AVIF. The system will convert it to WebP automatically.',
+    },
+    removeBackground: {
+      kh: 'កាត់ BG',
+      en: 'Remove BG',
+    },
+    removingBackground: {
+      kh: 'កំពុងកាត់ BG...',
+      en: 'Removing BG...',
+    },
+    removeBackgroundConfirm: {
+      kh: 'កាត់ background សម្រាប់ផលិតផលដែលបានត្រងទាំងអស់?',
+      en: 'Remove backgrounds from the current filtered products?',
+    },
+    removeBackgroundSuccess: {
+      kh: 'កាត់ background បានសម្រេច',
+      en: 'Background removal completed.',
+    },
+    removeBackgroundFailed: {
+      kh: 'កាត់ background មិនបានសម្រេច',
+      en: 'Background removal failed.',
     },
     formHelp: {
       kh: 'បំពេញព័ត៌មានដែលអតិថិជននឹងឃើញក្នុងបញ្ជីផលិតផល។',

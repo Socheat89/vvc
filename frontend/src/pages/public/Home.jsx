@@ -552,7 +552,11 @@ export default function Home() {
                 const productName = getProductDisplayName(product, language);
                 const imageUrl = getImageUrl(product.image);
                 const hasImage = imageUrl && !imageErrors[product.id];
-                const inStock = Number(product.stock) > 0;
+                const stockCount = Math.max(0, Number(product.stock || 0));
+                const inStock = stockCount > 0;
+                const stockLabel = inStock
+                  ? `${stockCount} ${t.featuredInStock[language]}`
+                  : t.featuredOutOfStock[language];
                 const price = Number(product.price || 0);
                 const priceLabel = price > 0
                   ? `$${price.toFixed(2)}`
@@ -571,15 +575,19 @@ export default function Home() {
                         <div className="home-featured-fallback">{getInitials(productName)}</div>
                       )}
                       <span className={`home-featured-stock ${inStock ? 'in' : 'out'}`}>
-                        {inStock ? t.featuredInStock[language] : t.featuredOutOfStock[language]}
+                        {stockLabel}
                       </span>
                     </div>
                     <div className="home-featured-body">
                       <span>{product.category?.name || t.featuredCategory[language]}</span>
                       <h3>{productName}</h3>
+                      <div className={`home-featured-stock-pill ${inStock ? 'in' : 'out'}`}>
+                        {stockLabel}
+                      </div>
                       <p>{product.description || t.featuredNoDescription[language]}</p>
                       <div className="home-featured-footer">
                         <strong className={price > 0 ? '' : 'home-featured-view-more'}>{priceLabel}</strong>
+                        <small>{stockLabel}</small>
                       </div>
                     </div>
                   </Link>

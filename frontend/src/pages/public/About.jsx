@@ -9,22 +9,10 @@ export default function About() {
   const t = translations.aboutPage;
 
   const chips = ['chipStory', 'chipQuality', 'chipCare', 'chipTrust'];
-  const stats = [
-    { value: t.stat1Value[language], label: t.stat1Label[language] },
-    { value: t.stat2Value[language], label: t.stat2Label[language] },
-    { value: t.stat3Value[language], label: t.stat3Label[language] },
-    { value: t.stat4Value[language], label: t.stat4Label[language] },
-  ];
   const values = [
     { titleKey: 'value1Title', descKey: 'value1Desc' },
     { titleKey: 'value2Title', descKey: 'value2Desc' },
     { titleKey: 'value3Title', descKey: 'value3Desc' },
-  ];
-  const process = [
-    { number: '01', titleKey: 'process1Title', descKey: 'process1Desc' },
-    { number: '02', titleKey: 'process2Title', descKey: 'process2Desc' },
-    { number: '03', titleKey: 'process3Title', descKey: 'process3Desc' },
-    { number: '04', titleKey: 'process4Title', descKey: 'process4Desc' },
   ];
 
   return (
@@ -72,17 +60,6 @@ export default function About() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4">
-        <div className="about-stat-strip reveal reveal-delay-2">
-          {stats.map((stat) => (
-            <div key={stat.label} className="about-stat">
-              <strong>{stat.value}</strong>
-              <span>{stat.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className="about-mission-section">
         <div className="about-mission-layout mx-auto max-w-6xl px-4">
           <div className="about-section-copy reveal">
@@ -111,25 +88,6 @@ export default function About() {
               <p>{t[value.descKey][language]}</p>
             </article>
           ))}
-        </div>
-      </section>
-
-      <section className="about-process-section">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="about-process-header reveal">
-            <span>{t.processKicker[language]}</span>
-            <h2>{t.processTitle[language]}</h2>
-          </div>
-
-          <div className="about-process-list">
-            {process.map((item) => (
-              <article key={item.number} className="about-process-step">
-                <strong>{item.number}</strong>
-                <h3>{t[item.titleKey][language]}</h3>
-                <p>{t[item.descKey][language]}</p>
-              </article>
-            ))}
-          </div>
         </div>
       </section>
 

@@ -15,6 +15,12 @@ export default defineConfig({
         target: 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php',
         changeOrigin: true,
         secure: false,
+      },
+      '/vvc-upload-proxy': {
+        target: 'https://app.vvc.asia/vvc_web/vvc/backend/public',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/vvc-upload-proxy/, ''),
       }
     }
   },

@@ -1,5 +1,7 @@
 const MAX_CACHE_SIZE = 48;
 const MAX_ACTIVE_REMOVALS = 1;
+const PRODUCTION_API_URL = 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php/api';
+const DEV_UPLOAD_PROXY_BASE = '/vvc-upload-proxy';
 
 const resultCache = new Map();
 const promiseCache = new Map();
@@ -17,9 +19,43 @@ const backgroundRemovalConfig = {
 
 const shouldProcessImage = (imageUrl) => (
   Boolean(imageUrl) &&
-  typeof window !== 'undefined' &&
-  !/^(blob:|data:)/i.test(String(imageUrl).trim())
+  typeof window !== 'undefined'
 );
+
+const toAbsoluteBrowserUrl = (url) => {
+  if (/^(?:[a-z+]+:)?\/\//i.test(url) || typeof window === 'undefined') {
+    return url;
+  }
+
+  return new URL(url, window.location.origin).toString();
+};
+
+const extractUploadPath = (imageUrl) => {
+  const normalizedUrl = String(imageUrl || '').trim().replace(/\\/g, '/');
+  const match = normalizedUrl.match(/uploads\/(?:products|categories|banners)\/[^?#]+/i);
+
+  return match ? match[0] : '';
+};
+
+const getImageProcessingSource = (imageUrl) => {
+  if (typeof imageUrl !== 'string') {
+    return imageUrl;
+  }
+
+  const uploadPath = extractUploadPath(imageUrl);
+
+  if (!uploadPath) {
+    return imageUrl;
+  }
+
+  if (import.meta.env.DEV) {
+    return toAbsoluteBrowserUrl(`${DEV_UPLOAD_PROXY_BASE}/${uploadPath}`);
+  }
+
+  const apiUrl = (import.meta.env.VITE_API_URL || PRODUCTION_API_URL).replace(/\/+$/, '');
+
+  return toAbsoluteBrowserUrl(`${apiUrl}/image-proxy?path=${encodeURIComponent(uploadPath)}`);
+};
 
 const trimCache = () => {
   while (resultCache.size > MAX_CACHE_SIZE) {
@@ -68,6 +104,26 @@ const enqueueRemoval = (task) => new Promise((resolve, reject) => {
   runNextRemoval();
 });
 
+const removeBackgroundSource = async (imageSource) => {
+  const { default: removeBackground } = await getBackgroundRemovalModule();
+  return removeBackground(getImageProcessingSource(imageSource), backgroundRemovalConfig);
+};
+
+export const getBackgroundRemovedImageBlob = (imageSource) => {
+  if (!shouldProcessImage(imageSource)) {
+    return Promise.reject(new Error('Background removal is only available in the browser.'));
+  }
+
+  return enqueueRemoval(() => removeBackgroundSource(imageSource));
+};
+
+export const getBackgroundRemovedImageFile = async (imageSource, filename = 'transparent-product.png') => {
+  const transparentBlob = await getBackgroundRemovedImageBlob(imageSource);
+  const outputName = filename.replace(/\.[^.]+$/, '') || 'transparent-product';
+
+  return new File([transparentBlob], `${outputName}.png`, { type: 'image/png' });
+};
+
 export const getBackgroundRemovedImageUrl = (imageUrl) => {
   const normalizedUrl = String(imageUrl || '').trim();
 
@@ -86,8 +142,7 @@ export const getBackgroundRemovedImageUrl = (imageUrl) => {
   }
 
   const removalPromise = enqueueRemoval(async () => {
-    const { default: removeBackground } = await getBackgroundRemovalModule();
-    const transparentBlob = await removeBackground(normalizedUrl, backgroundRemovalConfig);
+    const transparentBlob = await removeBackgroundSource(normalizedUrl);
     const transparentUrl = URL.createObjectURL(transparentBlob);
 
     resultCache.set(normalizedUrl, transparentUrl);

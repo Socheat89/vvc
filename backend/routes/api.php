@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BannerController;
+use App\Http\Controllers\Api\ImageProxyController;
 
 // Public routes
 Route::get('/products', [ProductController::class, 'index']);
@@ -17,6 +18,8 @@ Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
 Route::get('/banners', [BannerController::class, 'index']);
 Route::get('/banners/{id}', [BannerController::class, 'show']);
+
+Route::get('/image-proxy', [ImageProxyController::class, 'show']);
 
 // Auth routes
 Route::post('/login', [AuthController::class, 'login']);

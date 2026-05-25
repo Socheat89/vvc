@@ -58,6 +58,8 @@ const productFooterText = {
 export default function Footer() {
   const { language } = useLanguage();
   const t = translations.footer;
+  const currentYear = new Date().getFullYear();
+  const copyrightText = t.copyright[language].replace(/\b\d{4}\b/, currentYear);
 
   return (
     <footer className="mt-0 border-t border-[var(--stroke)] bg-white text-[var(--coal)]">
@@ -123,7 +125,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-10 border-t border-[var(--stroke)] pt-8 text-center text-sm text-slate-500">
-          <p>{t.copyright[language]}</p>
+          <p>{copyrightText}</p>
         </div>
       </div>
     </footer>
