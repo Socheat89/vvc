@@ -153,175 +153,121 @@ class ProductController extends Controller
     // POST /api/products/import - Admin only
     public function import(Request $request)
     {
-        try {
-            $upload = $request->file('file') ?: collect($request->allFiles())->flatten()->first();
+        $upload = $request->file('file') ?: collect($request->allFiles())->flatten()->first();
 
-            if (!$upload) {
-                $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
-                $postMaxBytes = $this->iniBytes(ini_get('post_max_size'));
+        if (!$upload) {
+            $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
+            $postMaxBytes = $this->iniBytes(ini_get('post_max_size'));
 
-                if ($contentLength > $postMaxBytes) {
-                    return response()->json([
-                        'message' => 'The Excel file is too large for the current PHP upload limit. Restart the backend with a larger post_max_size.',
-                    ], Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
-                }
-
+            if ($contentLength > $postMaxBytes) {
                 return response()->json([
-                    'message' => 'No Excel file was received. Please choose the file again and retry.',
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
-
-            if (!$upload->isValid()) {
-                return response()->json([
-                    'message' => 'Upload failed. The file may be larger than PHP allows right now. Current upload_max_filesize is ' . ini_get('upload_max_filesize') . ' and post_max_size is ' . ini_get('post_max_size') . '.',
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
-
-            $validator = Validator::make(['file' => $upload], [
-                'file' => 'file|mimes:xlsx,xls,csv,txt|max:204800',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => $validator->errors()->first('file'),
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
-
-            $spreadsheet = IOFactory::load($upload->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
-            $rows = $sheet->toArray(null, true, true, true);
-            $headerRow = $this->findHeaderRow($rows);
-
-            if (!$headerRow) {
-                return response()->json([
-                    'message' => 'Excel header row not found. Please include Item Code and Name columns.',
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
-
-            $headerMap = $this->buildHeaderMap($rows[$headerRow]);
-            $embeddedImages = $this->extractImagesByRow($sheet, $headerMap['image'] ?? null);
-            $created = 0;
-            $updated = 0;
-            $skipped = [];
-
-            DB::transaction(function () use ($rows, $headerRow, $headerMap, $embeddedImages, &$created, &$updated, &$skipped) {
-                foreach ($rows as $rowNumber => $row) {
-                    if ($rowNumber <= $headerRow || !$this->rowHasValues($row)) {
-                        continue;
-                    }
-
-                    $record = $this->mapRow($row, $headerMap);
-                    $name = $record['name'] ?: $record['local_name'] ?: $record['item_code'];
-
-                    if (!$name) {
-                        $skipped[] = [
-                            'row' => $rowNumber,
-                            'reason' => 'Missing Name, Local Name, and Item Code.',
-                        ];
-                        continue;
-                    }
-
-                    $categoryId = $this->resolveCategoryId($record['item_group'] ?: $record['item_type']);
-                    $itemCode = $record['item_code'];
-                    $product = $itemCode
-                        ? Product::where('item_code', $itemCode)->first()
-                        : Product::where('name', $name)->first();
-
-                    $data = [
-                        'item_code' => $itemCode,
-                        'local_name' => $record['local_name'],
-                        'name' => $name,
-                        'description' => $this->buildDescription($record, $name),
-                        'item_type' => $record['item_type'],
-                        'item_group' => $record['item_group'],
-                        'base_unit' => $record['base_unit'],
-                        'alarm_qty' => $record['alarm_qty'],
-                        'price' => $record['public_price'] ?? 0,
-                        'wholesale_price' => $record['wholesale_price'],
-                        'partner_price' => $record['partner_price'],
-                        'stock' => $record['on_hand'] ?? 0,
-                        'image' => $embeddedImages[$rowNumber] ?? $record['image'],
-                        'unit_set_name' => $record['unit_set_name'],
-                        'memo' => $record['memo'],
-                        'revenue_account' => $record['revenue_account'],
-                        'asset' => $record['asset'],
-                        'cogs' => $record['cogs'],
-                        'category_id' => $categoryId,
-                    ];
-
-                    if ($product) {
-                        $product->update($data);
-                        $updated++;
-                    } else {
-                        Product::create($data);
-                        $created++;
-                    }
-                }
-            });
-
-            \Illuminate\Support\Facades\Cache::forget('products_all');
-            \Illuminate\Support\Facades\Cache::forget('categories_all');
-
-            $drawingsDebug = [];
-            $saveResults   = [];
-            foreach ($sheet->getDrawingCollection() as $drawing) {
-                $drawingsDebug[] = $drawing->getCoordinates() . ' (' . $drawing->getName() . ')';
-            }
-
-            // Sample first 3 drawing save results for quick debug visibility in the response
-            $sampleDrawings = array_slice(iterator_to_array($sheet->getDrawingCollection()), 0, 3);
-            $sampleDir      = $this->ensureProductUploadDirectory();
-            foreach ($sampleDrawings as $sd) {
-                $class   = get_class($sd);
-                $coords  = $sd->getCoordinates();
-                $tryPath = null;
-                if ($sd instanceof Drawing && method_exists($sd, 'getPath')) {
-                    $tryPath = $sd->getPath();
-                }
-                $saved = $this->saveDrawing($sd, $sampleDir);
-                $saveResults[] = [
-                    'coordinates' => $coords,
-                    'class'       => $class,
-                    'source_path' => $tryPath,
-                    'saved_to'    => $saved,
-                ];
+                    'message' => 'The Excel file is too large for the current PHP upload limit. Restart the backend with a larger post_max_size.',
+                ], Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
             }
 
             return response()->json([
-                'message' => 'Products imported successfully.',
-                'created' => $created,
-                'updated' => $updated,
-                'skipped_count' => count($skipped),
-                'skipped' => array_slice($skipped, 0, 20),
-                'debug_info' => [
-                    'image_column_header'    => $headerMap['image'] ?? 'Not found',
-                    'total_drawings_in_excel' => count($sheet->getDrawingCollection()),
-                    'drawings_detected_at'   => array_slice($drawingsDebug, 0, 20),
-                    'save_results_sample'    => $saveResults,
-                    'upload_directory'       => $sampleDir,
-                    'gd_functions'           => [
-                        'imagepng'  => function_exists('imagepng'),
-                        'imagejpeg' => function_exists('imagejpeg'),
-                        'imagewebp' => function_exists('imagewebp'),
-                    ],
-                    'dir_writable' => is_writable($sampleDir),
-                ]
-            ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Import error: ' . $e->getMessage(), [
-                'exception' => $e,
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'message' => 'Import failed due to server error: ' . $e->getMessage(),
-                'error_detail' => [
-                    'message' => $e->getMessage(),
-                    'file' => basename($e->getFile()),
-                    'line' => $e->getLine(),
-                ]
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+                'message' => 'No Excel file was received. Please choose the file again and retry.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+
+        if (!$upload->isValid()) {
+            return response()->json([
+                'message' => 'Upload failed. The file may be larger than PHP allows right now. Current upload_max_filesize is ' . ini_get('upload_max_filesize') . ' and post_max_size is ' . ini_get('post_max_size') . '.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $validator = Validator::make(['file' => $upload], [
+            'file' => 'file|mimes:xlsx,xls,csv,txt|max:204800',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->first('file'),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $spreadsheet = IOFactory::load($upload->getRealPath());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray(null, true, true, true);
+        $headerRow = $this->findHeaderRow($rows);
+
+        if (!$headerRow) {
+            return response()->json([
+                'message' => 'Excel header row not found. Please include Item Code and Name columns.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $headerMap = $this->buildHeaderMap($rows[$headerRow]);
+        $embeddedImages = $this->extractImagesByRow($sheet, $headerMap['image'] ?? null);
+        $created = 0;
+        $updated = 0;
+        $skipped = [];
+
+        DB::transaction(function () use ($rows, $headerRow, $headerMap, $embeddedImages, &$created, &$updated, &$skipped) {
+            foreach ($rows as $rowNumber => $row) {
+                if ($rowNumber <= $headerRow || !$this->rowHasValues($row)) {
+                    continue;
+                }
+
+                $record = $this->mapRow($row, $headerMap);
+                $name = $record['name'] ?: $record['local_name'] ?: $record['item_code'];
+
+                if (!$name) {
+                    $skipped[] = [
+                        'row' => $rowNumber,
+                        'reason' => 'Missing Name, Local Name, and Item Code.',
+                    ];
+                    continue;
+                }
+
+                $categoryId = $this->resolveCategoryId($record['item_group'] ?: $record['item_type']);
+                $itemCode = $record['item_code'];
+                $product = $itemCode
+                    ? Product::where('item_code', $itemCode)->first()
+                    : Product::where('name', $name)->first();
+
+                $data = [
+                    'item_code' => $itemCode,
+                    'local_name' => $record['local_name'],
+                    'name' => $name,
+                    'description' => $this->buildDescription($record, $name),
+                    'item_type' => $record['item_type'],
+                    'item_group' => $record['item_group'],
+                    'base_unit' => $record['base_unit'],
+                    'alarm_qty' => $record['alarm_qty'],
+                    'price' => $record['public_price'] ?? 0,
+                    'wholesale_price' => $record['wholesale_price'],
+                    'partner_price' => $record['partner_price'],
+                    'stock' => $record['on_hand'] ?? 0,
+                    'image' => $embeddedImages[$rowNumber] ?? $record['image'],
+                    'unit_set_name' => $record['unit_set_name'],
+                    'memo' => $record['memo'],
+                    'revenue_account' => $record['revenue_account'],
+                    'asset' => $record['asset'],
+                    'cogs' => $record['cogs'],
+                    'category_id' => $categoryId,
+                ];
+
+                if ($product) {
+                    $product->update($data);
+                    $updated++;
+                } else {
+                    Product::create($data);
+                    $created++;
+                }
+            }
+        });
+
+        \Illuminate\Support\Facades\Cache::forget('products_all');
+        \Illuminate\Support\Facades\Cache::forget('categories_all');
+
+        return response()->json([
+            'message' => 'Products imported successfully.',
+            'created' => $created,
+            'updated' => $updated,
+            'skipped_count' => count($skipped),
+            'skipped' => array_slice($skipped, 0, 20),
+        ]);
     }
 
     // DELETE /api/products/{id} - Admin only
@@ -496,29 +442,20 @@ class ProductController extends Controller
     private function extractImagesByRow($sheet, ?string $imageColumn): array
     {
         if (!$imageColumn) {
-            \Illuminate\Support\Facades\Log::info('extractImagesByRow: No image column detected in header map.');
             return [];
         }
 
         $images = [];
-        $directory = $this->ensureProductUploadDirectory();
-        
-        $imageColumnIndex = Coordinate::columnIndexFromString($imageColumn);
-        $drawings = $sheet->getDrawingCollection();
-        
-        \Illuminate\Support\Facades\Log::info('extractImagesByRow: Total drawings in sheet = ' . count($drawings) . '. Target image column = ' . $imageColumn . ' (index ' . $imageColumnIndex . ')');
+        $directory = public_path('uploads/products');
 
-        foreach ($drawings as $drawing) {
-            $coordinates = $drawing->getCoordinates();
-            [$column, $row] = Coordinate::coordinateFromString($coordinates);
-            $columnIndex = Coordinate::columnIndexFromString($column);
-            
-            \Illuminate\Support\Facades\Log::info('Drawing details: Coordinates = ' . $coordinates . ', Name = ' . $drawing->getName() . ', Class = ' . get_class($drawing));
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
 
-            // Extremely robust: allow matching if the drawing's column is within 2 columns offset from the target image column
-            // This handles cases where images are slightly shifted or span multiple columns
-            if (abs($columnIndex - $imageColumnIndex) > 2) {
-                \Illuminate\Support\Facades\Log::info('Drawing at ' . $coordinates . ' skipped (column index ' . $columnIndex . ' is too far from target ' . $imageColumnIndex . ')');
+        foreach ($sheet->getDrawingCollection() as $drawing) {
+            [$column, $row] = Coordinate::coordinateFromString($drawing->getCoordinates());
+
+            if ($column !== $imageColumn) {
                 continue;
             }
 
@@ -526,9 +463,6 @@ class ProductController extends Controller
 
             if ($savedPath) {
                 $images[(int) $row] = $this->publicProductImageUrl($savedPath);
-                \Illuminate\Support\Facades\Log::info('Drawing at ' . $coordinates . ' successfully saved as: ' . $savedPath);
-            } else {
-                \Illuminate\Support\Facades\Log::info('Drawing at ' . $coordinates . ' failed to save.');
             }
         }
 
@@ -537,126 +471,35 @@ class ProductController extends Controller
 
     private function saveDrawing($drawing, string $directory): ?string
     {
-        $baseFilename = 'product-' . Str::uuid();
-        $drawingClass  = get_class($drawing);
-
-        \Illuminate\Support\Facades\Log::info("saveDrawing START — class={$drawingClass}, dir={$directory}");
+        $filename = 'product-' . Str::uuid() . '.webp';
+        $path = $directory . DIRECTORY_SEPARATOR . $filename;
 
         if ($drawing instanceof MemoryDrawing) {
-            $resource = $drawing->getImageResource();
-            \Illuminate\Support\Facades\Log::info('MemoryDrawing — resource=' . (is_resource($resource) ? 'OK' : 'NULL'));
-
-            if (!is_resource($resource)) {
-                \Illuminate\Support\Facades\Log::warning('MemoryDrawing: getImageResource() returned non-resource — skipping.');
-                return null;
-            }
-
-            // Try WebP first
-            if (function_exists('imagewebp')) {
-                $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
-                $ok = @imagewebp($resource, $path, 82);
-                \Illuminate\Support\Facades\Log::info("imagewebp => " . ($ok ? "OK: {$path}" : 'FAILED'));
-                if ($ok) { @chmod($path, 0644); return $path; }
-            }
-
-            // Fallback 1: PNG (lossless, standard)
-            if (function_exists('imagepng')) {
-                $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.png';
-                $ok = @imagepng($resource, $path);
-                \Illuminate\Support\Facades\Log::info("imagepng => " . ($ok ? "OK: {$path}" : 'FAILED'));
-                if ($ok) { @chmod($path, 0644); return $path; }
-            }
-
-            // Fallback 2: JPEG
-            if (function_exists('imagejpeg')) {
-                $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.jpg';
-                $ok = @imagejpeg($resource, $path, 85);
-                \Illuminate\Support\Facades\Log::info("imagejpeg => " . ($ok ? "OK: {$path}" : 'FAILED'));
-                if ($ok) { @chmod($path, 0644); return $path; }
-            }
-
-            \Illuminate\Support\Facades\Log::warning('MemoryDrawing: all GD functions failed to save image.');
-            return null;
+            return imagewebp($drawing->getImageResource(), $path, 82) ? $path : null;
         }
 
         if ($drawing instanceof Drawing && method_exists($drawing, 'getPath')) {
-            $sourcePath = $drawing->getPath();
-            $fileExists = is_file($sourcePath);
-            \Illuminate\Support\Facades\Log::info("Drawing — getPath()={$sourcePath}, is_file=" . ($fileExists ? 'true' : 'false'));
-
-            if (!$fileExists) {
-                \Illuminate\Support\Facades\Log::warning("Drawing: source file does not exist at path: {$sourcePath}");
-                return null;
-            }
-
-            // Try WebP conversion first
-            $webpPath = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
-            if ($this->convertImagePathToWebp($sourcePath, $webpPath)) {
-                @chmod($webpPath, 0644);
-                \Illuminate\Support\Facades\Log::info("Drawing: saved as WebP at {$webpPath}");
-                return $webpPath;
-            }
-
-            // Fallback: copy original file as-is
-            $extension = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) ?: 'jpg';
-            $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
-            $originalPath = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.' . $extension;
-            $ok = @copy($sourcePath, $originalPath);
-            \Illuminate\Support\Facades\Log::info("Drawing copy => " . ($ok ? "OK: {$originalPath}" : 'FAILED'));
-            if ($ok) { @chmod($originalPath, 0644); return $originalPath; }
+            return $this->convertImagePathToWebp($drawing->getPath(), $path) ? $path : null;
         }
 
-        \Illuminate\Support\Facades\Log::warning("saveDrawing: unhandled drawing class or save failed — class={$drawingClass}");
         return null;
     }
 
     private function storeWebpImage(UploadedFile $file): string
     {
-        $directory = $this->ensureProductUploadDirectory();
-        $baseFilename = 'product-' . Str::uuid();
-
-        // Try WebP conversion first
-        $webpPath = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
-        if ($this->convertImagePathToWebp($file->getRealPath(), $webpPath)) {
-            @chmod($webpPath, 0644);
-            return $this->publicProductImageUrl($webpPath);
-        }
-
-        // Fallback: save original file format
-        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
-        $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
-        $imageName = $baseFilename . '.' . $extension;
-        $file->move($directory, $imageName);
-        $imagePath = $directory . DIRECTORY_SEPARATOR . $imageName;
-        @chmod($imagePath, 0644);
-        return $this->publicProductImageUrl($imagePath);
-    }
-
-    private function ensureProductUploadDirectory(): string
-    {
         $directory = public_path('uploads/products');
 
-        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
-            throw new \RuntimeException('Failed to create uploads/products directory.');
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
         }
 
-        if (!is_writable($directory)) {
-            @chmod($directory, 0775);
+        $path = $directory . DIRECTORY_SEPARATOR . 'product-' . Str::uuid() . '.webp';
+
+        if (!$this->convertImagePathToWebp($file->getRealPath(), $path)) {
+            abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Unable to convert image to WebP.');
         }
 
-        if (!is_writable($directory)) {
-            throw new \RuntimeException('uploads/products directory is not writable.');
-        }
-
-        $testPath = $directory . DIRECTORY_SEPARATOR . '.write-test-' . uniqid('', true) . '.tmp';
-
-        if (@file_put_contents($testPath, 'ok') === false) {
-            throw new \RuntimeException('Unable to write a test file to uploads/products.');
-        }
-
-        @unlink($testPath);
-
-        return $directory;
+        return $this->publicProductImageUrl($path);
     }
 
     private function convertImagePathToWebp(string $source, string $destination): bool

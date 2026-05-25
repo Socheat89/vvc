@@ -12,51 +12,6 @@ use App\Http\Controllers\Api\BannerController;
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 
-Route::get('/run-composer-install', function (\Illuminate\Http\Request $request) {
-    if ($request->query('key') !== 'vvc-install-2026') {
-        return response()->json(['message' => 'Unauthorized'], 401);
-    }
-
-    try {
-        chdir(base_path());
-        $output = [];
-        $returnVar = 0;
-        
-        // Check if exec is enabled
-        if (!function_exists('exec')) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'The exec() function is disabled in your PHP configuration. Please ask your hosting provider to enable it, or run composer install via cPanel Terminal.'
-            ], 400);
-        }
-
-        // Run composer install
-        exec('composer install --no-dev --optimize-autoloader 2>&1', $output, $returnVar);
-        
-        // If it failed, try using composer.phar
-        if ($returnVar !== 0) {
-            $output[] = 'System composer failed, attempting to download composer.phar...';
-            if (!file_exists('composer.phar')) {
-                copy('https://getcomposer.org/installer', 'composer-setup.php');
-                exec('php composer-setup.php 2>&1', $output, $returnVar);
-                @unlink('composer-setup.php');
-            }
-            exec('php composer.phar install --no-dev --optimize-autoloader 2>&1', $output, $returnVar);
-        }
-        
-        return response()->json([
-            'status' => $returnVar === 0 ? 'success' : 'error',
-            'return_code' => $returnVar,
-            'output' => $output
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage()
-        ], 500);
-    }
-});
-
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
