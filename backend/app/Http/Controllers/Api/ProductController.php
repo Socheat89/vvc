@@ -467,11 +467,11 @@ class ProductController extends Controller
 
     private function saveDrawing($drawing, string $directory): ?string
     {
-        $filename = 'product-' . Str::uuid() . '.webp';
-        $path = $directory . DIRECTORY_SEPARATOR . $filename;
+        $baseFilename = 'product-' . Str::uuid();
 
         if ($drawing instanceof MemoryDrawing) {
-            if (imagewebp($drawing->getImageResource(), $path, 82)) {
+            $path = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
+            if (function_exists('imagewebp') && imagewebp($drawing->getImageResource(), $path, 82)) {
                 @chmod($path, 0644);
                 return $path;
             }
@@ -484,9 +484,20 @@ class ProductController extends Controller
                 return null;
             }
 
-            if ($this->convertImagePathToWebp($sourcePath, $path)) {
-                @chmod($path, 0644);
-                return $path;
+            // Try WebP conversion first
+            $webpPath = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
+            if ($this->convertImagePathToWebp($sourcePath, $webpPath)) {
+                @chmod($webpPath, 0644);
+                return $webpPath;
+            }
+
+            // Fallback: copy original file as-is
+            $extension = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) ?: 'jpg';
+            $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
+            $originalPath = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.' . $extension;
+            if (@copy($sourcePath, $originalPath)) {
+                @chmod($originalPath, 0644);
+                return $originalPath;
             }
         }
 
@@ -496,14 +507,23 @@ class ProductController extends Controller
     private function storeWebpImage(UploadedFile $file): string
     {
         $directory = $this->ensureProductUploadDirectory();
-        $path = $directory . DIRECTORY_SEPARATOR . 'product-' . Str::uuid() . '.webp';
+        $baseFilename = 'product-' . Str::uuid();
 
-        if (!$this->convertImagePathToWebp($file->getRealPath(), $path)) {
-            abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Unable to convert image to WebP.');
+        // Try WebP conversion first
+        $webpPath = $directory . DIRECTORY_SEPARATOR . $baseFilename . '.webp';
+        if ($this->convertImagePathToWebp($file->getRealPath(), $webpPath)) {
+            @chmod($webpPath, 0644);
+            return $this->publicProductImageUrl($webpPath);
         }
 
-        @chmod($path, 0644);
-        return $this->publicProductImageUrl($path);
+        // Fallback: save original file format
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
+        $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
+        $imageName = $baseFilename . '.' . $extension;
+        $file->move($directory, $imageName);
+        $imagePath = $directory . DIRECTORY_SEPARATOR . $imageName;
+        @chmod($imagePath, 0644);
+        return $this->publicProductImageUrl($imagePath);
     }
 
     private function ensureProductUploadDirectory(): string
