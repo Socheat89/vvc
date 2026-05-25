@@ -153,121 +153,137 @@ class ProductController extends Controller
     // POST /api/products/import - Admin only
     public function import(Request $request)
     {
-        $upload = $request->file('file') ?: collect($request->allFiles())->flatten()->first();
+        try {
+            $upload = $request->file('file') ?: collect($request->allFiles())->flatten()->first();
 
-        if (!$upload) {
-            $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
-            $postMaxBytes = $this->iniBytes(ini_get('post_max_size'));
+            if (!$upload) {
+                $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
+                $postMaxBytes = $this->iniBytes(ini_get('post_max_size'));
 
-            if ($contentLength > $postMaxBytes) {
+                if ($contentLength > $postMaxBytes) {
+                    return response()->json([
+                        'message' => 'The Excel file is too large for the current PHP upload limit. Restart the backend with a larger post_max_size.',
+                    ], Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+                }
+
                 return response()->json([
-                    'message' => 'The Excel file is too large for the current PHP upload limit. Restart the backend with a larger post_max_size.',
-                ], Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+                    'message' => 'No Excel file was received. Please choose the file again and retry.',
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-            return response()->json([
-                'message' => 'No Excel file was received. Please choose the file again and retry.',
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+            if (!$upload->isValid()) {
+                return response()->json([
+                    'message' => 'Upload failed. The file may be larger than PHP allows right now. Current upload_max_filesize is ' . ini_get('upload_max_filesize') . ' and post_max_size is ' . ini_get('post_max_size') . '.',
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
 
-        if (!$upload->isValid()) {
-            return response()->json([
-                'message' => 'Upload failed. The file may be larger than PHP allows right now. Current upload_max_filesize is ' . ini_get('upload_max_filesize') . ' and post_max_size is ' . ini_get('post_max_size') . '.',
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+            $validator = Validator::make(['file' => $upload], [
+                'file' => 'file|mimes:xlsx,xls,csv,txt|max:204800',
+            ]);
 
-        $validator = Validator::make(['file' => $upload], [
-            'file' => 'file|mimes:xlsx,xls,csv,txt|max:204800',
-        ]);
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => $validator->errors()->first('file'),
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => $validator->errors()->first('file'),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+            $spreadsheet = IOFactory::load($upload->getRealPath());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
+            $headerRow = $this->findHeaderRow($rows);
 
-        $spreadsheet = IOFactory::load($upload->getRealPath());
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray(null, true, true, true);
-        $headerRow = $this->findHeaderRow($rows);
+            if (!$headerRow) {
+                return response()->json([
+                    'message' => 'Excel header row not found. Please include Item Code and Name columns.',
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
 
-        if (!$headerRow) {
-            return response()->json([
-                'message' => 'Excel header row not found. Please include Item Code and Name columns.',
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+            $headerMap = $this->buildHeaderMap($rows[$headerRow]);
+            $embeddedImages = $this->extractImagesByRow($sheet, $headerMap['image'] ?? null);
+            $created = 0;
+            $updated = 0;
+            $skipped = [];
 
-        $headerMap = $this->buildHeaderMap($rows[$headerRow]);
-        $embeddedImages = $this->extractImagesByRow($sheet, $headerMap['image'] ?? null);
-        $created = 0;
-        $updated = 0;
-        $skipped = [];
+            DB::transaction(function () use ($rows, $headerRow, $headerMap, $embeddedImages, &$created, &$updated, &$skipped) {
+                foreach ($rows as $rowNumber => $row) {
+                    if ($rowNumber <= $headerRow || !$this->rowHasValues($row)) {
+                        continue;
+                    }
 
-        DB::transaction(function () use ($rows, $headerRow, $headerMap, $embeddedImages, &$created, &$updated, &$skipped) {
-            foreach ($rows as $rowNumber => $row) {
-                if ($rowNumber <= $headerRow || !$this->rowHasValues($row)) {
-                    continue;
-                }
+                    $record = $this->mapRow($row, $headerMap);
+                    $name = $record['name'] ?: $record['local_name'] ?: $record['item_code'];
 
-                $record = $this->mapRow($row, $headerMap);
-                $name = $record['name'] ?: $record['local_name'] ?: $record['item_code'];
+                    if (!$name) {
+                        $skipped[] = [
+                            'row' => $rowNumber,
+                            'reason' => 'Missing Name, Local Name, and Item Code.',
+                        ];
+                        continue;
+                    }
 
-                if (!$name) {
-                    $skipped[] = [
-                        'row' => $rowNumber,
-                        'reason' => 'Missing Name, Local Name, and Item Code.',
+                    $categoryId = $this->resolveCategoryId($record['item_group'] ?: $record['item_type']);
+                    $itemCode = $record['item_code'];
+                    $product = $itemCode
+                        ? Product::where('item_code', $itemCode)->first()
+                        : Product::where('name', $name)->first();
+
+                    $data = [
+                        'item_code' => $itemCode,
+                        'local_name' => $record['local_name'],
+                        'name' => $name,
+                        'description' => $this->buildDescription($record, $name),
+                        'item_type' => $record['item_type'],
+                        'item_group' => $record['item_group'],
+                        'base_unit' => $record['base_unit'],
+                        'alarm_qty' => $record['alarm_qty'],
+                        'price' => $record['public_price'] ?? 0,
+                        'wholesale_price' => $record['wholesale_price'],
+                        'partner_price' => $record['partner_price'],
+                        'stock' => $record['on_hand'] ?? 0,
+                        'image' => $embeddedImages[$rowNumber] ?? $record['image'],
+                        'unit_set_name' => $record['unit_set_name'],
+                        'memo' => $record['memo'],
+                        'revenue_account' => $record['revenue_account'],
+                        'asset' => $record['asset'],
+                        'cogs' => $record['cogs'],
+                        'category_id' => $categoryId,
                     ];
-                    continue;
+
+                    if ($product) {
+                        $product->update($data);
+                        $updated++;
+                    } else {
+                        Product::create($data);
+                        $created++;
+                    }
                 }
+            });
 
-                $categoryId = $this->resolveCategoryId($record['item_group'] ?: $record['item_type']);
-                $itemCode = $record['item_code'];
-                $product = $itemCode
-                    ? Product::where('item_code', $itemCode)->first()
-                    : Product::where('name', $name)->first();
+            \Illuminate\Support\Facades\Cache::forget('products_all');
+            \Illuminate\Support\Facades\Cache::forget('categories_all');
 
-                $data = [
-                    'item_code' => $itemCode,
-                    'local_name' => $record['local_name'],
-                    'name' => $name,
-                    'description' => $this->buildDescription($record, $name),
-                    'item_type' => $record['item_type'],
-                    'item_group' => $record['item_group'],
-                    'base_unit' => $record['base_unit'],
-                    'alarm_qty' => $record['alarm_qty'],
-                    'price' => $record['public_price'] ?? 0,
-                    'wholesale_price' => $record['wholesale_price'],
-                    'partner_price' => $record['partner_price'],
-                    'stock' => $record['on_hand'] ?? 0,
-                    'image' => $embeddedImages[$rowNumber] ?? $record['image'],
-                    'unit_set_name' => $record['unit_set_name'],
-                    'memo' => $record['memo'],
-                    'revenue_account' => $record['revenue_account'],
-                    'asset' => $record['asset'],
-                    'cogs' => $record['cogs'],
-                    'category_id' => $categoryId,
-                ];
+            return response()->json([
+                'message' => 'Products imported successfully.',
+                'created' => $created,
+                'updated' => $updated,
+                'skipped_count' => count($skipped),
+                'skipped' => array_slice($skipped, 0, 20),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Import error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-                if ($product) {
-                    $product->update($data);
-                    $updated++;
-                } else {
-                    Product::create($data);
-                    $created++;
-                }
-            }
-        });
-
-        \Illuminate\Support\Facades\Cache::forget('products_all');
-        \Illuminate\Support\Facades\Cache::forget('categories_all');
-
-        return response()->json([
-            'message' => 'Products imported successfully.',
-            'created' => $created,
-            'updated' => $updated,
-            'skipped_count' => count($skipped),
-            'skipped' => array_slice($skipped, 0, 20),
-        ]);
+            return response()->json([
+                'message' => 'Import failed due to server error: ' . $e->getMessage(),
+                'error_detail' => [
+                    'message' => $e->getMessage(),
+                    'file' => basename($e->getFile()),
+                    'line' => $e->getLine(),
+                ]
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     // DELETE /api/products/{id} - Admin only
