@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\ImageProxyController;
 use App\Http\Controllers\Api\TranslationController;
+use App\Http\Controllers\Api\SystemController;
 
 // Public routes
 Route::get('/products', [ProductController::class, 'index']);
@@ -58,5 +59,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/translations', [TranslationController::class, 'store']);
         Route::post('/translations/reset', [TranslationController::class, 'reset']);
+
+        Route::get('/system/status', [SystemController::class, 'status']);
+        Route::post('/system/migrate', [SystemController::class, 'migrate']);
+        Route::post('/system/cache-clear', [SystemController::class, 'clearCache']);
     });
 });

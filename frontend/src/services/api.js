@@ -179,4 +179,10 @@ export const translationService = {
   reset: () => api.post('/translations/reset'),
 };
 
+export const systemService = {
+  getStatus: () => api.get('/system/status'),
+  runMigrations: () => api.post('/system/migrate'),
+  clearCache: () => api.post('/system/cache-clear'),
+};
+
 export default api;

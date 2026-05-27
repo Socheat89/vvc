@@ -849,6 +849,10 @@ const translations = {
       kh: 'ភាសា',
       en: 'Translations',
     },
+    system: {
+      kh: 'ប្រព័ន្ធ API',
+      en: 'System Console',
+    },
     logout: {
       kh: 'ចាកចេញ',
       en: 'Logout',

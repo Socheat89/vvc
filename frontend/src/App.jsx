@@ -13,6 +13,7 @@ import ManageCategories from './pages/admin/ManageCategories';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageTranslations from './pages/admin/ManageTranslations';
 import ManageBanners from './pages/admin/ManageBanners';
+import ManageSystem from './pages/admin/ManageSystem';
 import ProtectedRoute from './components/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
 
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="users" element={<ManageUsers />} />
             <Route path="banners" element={<ManageBanners />} />
             <Route path="translations" element={<ManageTranslations />} />
+            <Route path="system" element={<ManageSystem />} />
           </Route>
 
           {/* 404 */}
