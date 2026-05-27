@@ -21,7 +21,7 @@ export default function AdminLogin() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const keyParam = searchParams.get('key') || searchParams.get('access_key');
-    const adminSecret = import.meta.env.VITE_ADMIN_SECRET_KEY || 'vvc2026';
+    const adminSecret = import.meta.env.VITE_ADMIN_SECRET_KEY || 'vvc_secure_2026';
 
     if (keyParam === adminSecret) {
       setAuthorized(true);
@@ -61,7 +61,7 @@ export default function AdminLogin() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(199,154,45,0.15),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(15,23,42,0.8),transparent_80%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black_70%)]" />
-        
+
         {/* Floating Glowing Orbs */}
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-[var(--gold)]/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
         <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
@@ -139,7 +139,7 @@ export default function AdminLogin() {
 
       {/* Right Column - Login Form */}
       <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 md:p-20 bg-[#fffaf0] relative">
-        
+
         {/* Language Toggler at Top Right */}
         <div className="flex justify-end items-center">
           <button
@@ -163,7 +163,7 @@ export default function AdminLogin() {
             <div className="lg:hidden mx-auto h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white p-2.5 shadow-sm flex mb-4">
               <img src={logo} alt="Van Van Cambodia" className="h-12 w-12 object-contain" />
             </div>
-            
+
             <span className="inline-block px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gold-deep)] bg-[var(--gold-soft)] rounded-full">
               {t.access[language]}
             </span>
