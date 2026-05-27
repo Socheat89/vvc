@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations';
@@ -7,6 +7,7 @@ import logo from '../../assets/logo.png';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('password123');
   const [loading, setLoading] = useState(false);
@@ -14,6 +15,21 @@ export default function AdminLogin() {
   const { language, toggleLanguage } = useLanguage();
   const t = translations.adminLogin;
   const tc = translations.common;
+
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const keyParam = searchParams.get('key') || searchParams.get('access_key');
+    const adminSecret = import.meta.env.VITE_ADMIN_SECRET_KEY || 'vvc2026';
+
+    if (keyParam === adminSecret) {
+      setAuthorized(true);
+    } else {
+      // Redirect to homepage if secret query parameter is missing or incorrect
+      navigate('/', { replace: true });
+    }
+  }, [location.search, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,6 +48,10 @@ export default function AdminLogin() {
       setLoading(false);
     }
   };
+
+  if (!authorized) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
