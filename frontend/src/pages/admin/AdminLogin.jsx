@@ -232,19 +232,7 @@ export default function AdminLogin() {
             </button>
           </form>
 
-          {/* Demo Account Indicator */}
-          <div className="mt-8 rounded-2xl border border-[var(--gold)]/20 bg-[var(--gold-soft)]/50 p-4 text-xs">
-            <div className="flex items-center gap-2 text-[var(--gold-deep)] font-bold uppercase tracking-wider mb-2">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {t.demoCredentials[language]}
-            </div>
-            <div className="space-y-1 text-slate-600">
-              <p><span className="font-semibold text-slate-700">{t.email[language]}:</span> admin@example.com</p>
-              <p><span className="font-semibold text-slate-700">{t.password[language]}:</span> password123</p>
-            </div>
-          </div>
+
         </div>
 
         {/* Footer info for mobile only */}
