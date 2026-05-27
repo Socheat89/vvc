@@ -78,7 +78,7 @@ export default function ManageTranslations() {
     translationService.getAll()
       .then(res => {
         if (!active) return;
-        const dbList = res.data?.data || [];
+        const dbList = Array.isArray(res.data?.data) ? res.data.data : [];
         if (dbList.length > 0) {
           const dbMapping = {};
           dbList.forEach(item => {

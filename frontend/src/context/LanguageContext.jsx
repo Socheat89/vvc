@@ -17,7 +17,7 @@ export function LanguageProvider({ children }) {
   useEffect(() => {
     translationService.getAll()
       .then(res => {
-        const dbList = res.data?.data || [];
+        const dbList = Array.isArray(res.data?.data) ? res.data.data : [];
         if (dbList.length > 0) {
           const overrides = {};
           dbList.forEach(item => {
