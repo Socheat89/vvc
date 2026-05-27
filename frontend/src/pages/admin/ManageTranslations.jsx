@@ -41,6 +41,8 @@ export default function ManageTranslations() {
   const [resetSuccess, setResetSuccess] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editForm, setEditForm] = useState({ en: '', kh: '' });
 
   // Load flattened translations list with local storage cache fallback
   const [items, setItems] = useState(() => {
@@ -286,6 +288,25 @@ export default function ManageTranslations() {
     }
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+  };
+
+  const handleSaveModal = (e) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    setItems(prevItems =>
+      prevItems.map(item => {
+        if (item.path === editingItem.path) {
+          return { ...item, en: editForm.en, kh: editForm.kh };
+        }
+        return item;
+      })
+    );
+    setEditingItem(null);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -433,41 +454,52 @@ export default function ManageTranslations() {
           <table className="w-full min-w-[800px] text-sm text-left">
             <thead className="border-b border-slate-100 bg-slate-50/50">
               <tr>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px] w-1/3">Key Path / Namespace</th>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px] w-1/3">English (EN)</th>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px] w-1/3">Khmer (KH)</th>
+                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px] w-16">No.</th>
+                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">Key Path / Namespace</th>
+                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px] text-right w-24">{language === 'kh' ? 'សកម្មភាព' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedItems.map((item) => {
+              {paginatedItems.map((item, index) => {
                 const isModified = item.en !== item.originalEn || item.kh !== item.originalKh;
+                const itemIndex = (currentPageSafe - 1) * ITEMS_PER_PAGE + index + 1;
                 return (
                   <tr key={item.path} className={`transition hover:bg-slate-50/30 group ${isModified ? 'bg-[var(--gold-soft)]/20' : ''}`}>
-                    <td className="px-6 py-4 font-mono text-xs text-slate-500 align-top">
-                      <div className="break-all font-semibold select-all">{item.path}</div>
-                      {isModified && (
-                        <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[var(--gold-soft)] border border-[var(--gold)]/20 text-[var(--gold-deep)] rounded">
-                          Modified
-                        </span>
-                      )}
+                    <td className="px-6 py-4 text-xs font-bold text-slate-400 align-middle">{itemIndex}</td>
+                    <td className="px-6 py-4 align-top">
+                      <div className="flex items-start gap-2.5">
+                        <div className="font-mono text-xs text-slate-800 break-all font-semibold select-all">{item.path}</div>
+                        {isModified && (
+                          <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider bg-[var(--gold-soft)] border border-[var(--gold)]/20 text-[var(--gold-deep)] rounded">
+                            {language === 'kh' ? 'បានកែប្រែ' : 'Modified'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-[11px] text-slate-400 font-medium bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
+                        <div className="flex items-start gap-1">
+                          <span className="text-slate-500 font-bold flex-shrink-0">EN:</span>
+                          <span className="text-slate-600 break-words line-clamp-2">{item.en || '-'}</span>
+                        </div>
+                        <div className="flex items-start gap-1">
+                          <span className="text-slate-500 font-bold flex-shrink-0">KH:</span>
+                          <span className="text-slate-600 break-words line-clamp-2">{item.kh || '-'}</span>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <textarea
-                        value={item.en}
-                        onChange={(e) => handleValueChange(item.path, 'en', e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 bg-white/70 p-2.5 text-xs outline-none transition focus:bg-white focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold-soft)] leading-relaxed resize-y"
-                        rows="2"
-                        placeholder="English translation..."
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <textarea
-                        value={item.kh}
-                        onChange={(e) => handleValueChange(item.path, 'kh', e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 bg-white/70 p-2.5 text-xs outline-none transition focus:bg-white focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold-soft)] leading-relaxed resize-y"
-                        rows="2"
-                        placeholder="Khmer translation..."
-                      />
+                    <td className="px-6 py-4 text-right align-middle">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingItem(item);
+                          setEditForm({ en: item.en, kh: item.kh });
+                        }}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white text-[var(--gold-deep)] hover:bg-[var(--gold-soft)] hover:border-[var(--gold)]/30 shadow-sm transition-all duration-150 hover:scale-105 active:scale-95"
+                        title={language === 'kh' ? 'កែប្រែ' : 'Edit'}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 );
@@ -533,6 +565,75 @@ export default function ManageTranslations() {
           </div>
         )}
       </div>
+
+      {/* Edit Modal Popup */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/40 backdrop-blur-sm page-fade animate-fade-in">
+          <div className="bg-[#fffaf0] border border-slate-200/60 w-full max-w-2xl rounded-2xl p-6 md:p-8 shadow-2xl reveal animate-scale-up">
+            <div className="mb-6 flex items-center justify-between border-b border-slate-200/50 pb-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {language === 'kh' ? 'កែប្រែភាសាបកប្រែ' : 'Edit Translation'}
+                </h2>
+                <p className="mt-2 text-[11px] font-mono text-slate-500 break-all bg-slate-100/60 p-2 rounded-xl border border-slate-200/40 select-all font-semibold">
+                  {editingItem.path}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200/60 text-slate-500 transition hover:bg-slate-200"
+              >
+                <span aria-hidden="true" className="text-xl leading-none">&times;</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveModal} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">
+                  English (EN)
+                </label>
+                <textarea
+                  value={editForm.en}
+                  onChange={(e) => setEditForm({ ...editForm, en: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)] leading-relaxed resize-y"
+                  rows="4"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">
+                  Khmer (KH)
+                </label>
+                <textarea
+                  value={editForm.kh}
+                  onChange={(e) => setEditForm({ ...editForm, kh: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)] leading-relaxed resize-y"
+                  rows="4"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-slate-200/50 justify-end mt-8">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="rounded-full border border-slate-200 bg-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:bg-slate-50"
+                >
+                  {language === 'kh' ? 'បោះបង់' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-full bg-[var(--gold)] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 shadow-[0_4px_14px_rgba(199,154,45,0.4)]"
+                >
+                  {language === 'kh' ? 'រក្សាទុក' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
