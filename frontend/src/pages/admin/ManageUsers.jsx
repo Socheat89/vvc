@@ -14,51 +14,27 @@ const ITEMS_PER_PAGE = 10;
 const sortOptions = ['newest', 'nameAsc', 'nameDesc'];
 
 const ActionMenu = ({ onEdit, onDelete, isDeleting, language, t }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   return (
-    <div className="relative inline-block text-left" ref={menuRef}>
+    <div className="flex items-center justify-end gap-2">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+        onClick={onEdit}
+        className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white text-[var(--gold-deep)] hover:bg-[var(--gold-soft)] hover:border-[var(--gold)]/30 shadow-sm transition-all duration-150 hover:scale-105 active:scale-95"
+        title={t.edit[language]}
       >
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
         </svg>
       </button>
-
-      {isOpen && (
-        <div className="absolute right-0 z-50 mt-1 w-36 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden border border-slate-100">
-          <div className="py-1">
-            <button
-              onClick={() => { setIsOpen(false); onEdit(); }}
-              className="flex w-full items-center px-4 py-2.5 text-sm text-[var(--gold-deep)] hover:bg-[var(--gold-soft)] font-semibold transition-colors"
-            >
-              <svg className="mr-2.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-              {t.edit[language]}
-            </button>
-            <button
-              onClick={() => { setIsOpen(false); onDelete(); }}
-              disabled={isDeleting}
-              className="flex w-full items-center px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 font-semibold disabled:opacity-50 transition-colors"
-            >
-              <svg className="mr-2.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              {isDeleting ? t.deleting[language] : t.delete[language]}
-            </button>
-          </div>
-        </div>
-      )}
+      <button
+        onClick={onDelete}
+        disabled={isDeleting}
+        className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-200 shadow-sm transition-all duration-150 disabled:opacity-50 hover:scale-105 active:scale-95"
+        title={isDeleting ? t.deleting[language] : t.delete[language]}
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
     </div>
   );
 };
@@ -265,258 +241,155 @@ export default function ManageUsers() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="h-8 w-48 animate-pulse rounded bg-white/70" />
-        <div className="h-40 animate-pulse rounded-lg bg-white/70" />
-        <div className="h-80 animate-pulse rounded-lg bg-white/70" />
+      <div className="space-y-6 animate-pulse">
+        <div className="h-10 w-56 rounded bg-slate-200/60" />
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="h-28 rounded-2xl bg-white/70 border border-slate-100 shadow-sm" />
+        </div>
+        <div className="h-14 rounded-2xl bg-white/70 border border-slate-100 shadow-sm" />
+        <div className="h-96 rounded-2xl bg-white/70 border border-slate-100 shadow-sm" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 page-fade">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-8 page-fade max-w-7xl mx-auto">
+      {/* Header section */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200/60">
         <div>
-          <span className="pill">{t.eyebrow[language]}</span>
-          <h1 className="mt-2 text-3xl font-semibold text-slate-900">{t.title[language]}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">{t.subtitle[language]}</p>
+          <span className="inline-block px-3 py-1 mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gold-deep)] bg-[var(--gold-soft)] shadow-sm rounded-full">
+            {t.eyebrow[language]}
+          </span>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{t.title[language]}</h1>
+          <p className="mt-2 text-sm text-slate-500 max-w-2xl">{t.subtitle[language]}</p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={handleAdd} className="btn-primary">
-            <span aria-hidden="true">+</span>
-            {t.addUser[language]}
-          </button>
-        </div>
+        <button 
+          onClick={handleAdd} 
+          className="flex items-center gap-2 rounded-full bg-[var(--gold)] text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider shadow-[0_4px_14px_rgba(199,154,45,0.4)] transition-all hover:shadow-[0_6px_20px_rgba(199,154,45,0.6)] hover:-translate-y-0.5 active:translate-y-0"
+        >
+          <span className="text-sm font-light">+</span>
+          {t.addUser[language]}
+        </button>
       </div>
 
+      {/* Notifications */}
       {formError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 reveal">
-          {formError}
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex gap-2 items-center">
+          <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{formError}</span>
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3 reveal">
-        <div className="glass-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-slate-300/60">
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{t.totalUsers[language]}</p>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{stats.totalUsers}</p>
+      {/* Stats Cards */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-3 reveal">
+        <div className="glass-card rounded-2xl p-5 transition hover:shadow-md bg-white/70">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t.totalUsers[language]}</p>
+          <p className="mt-4 text-3xl font-semibold text-slate-800">{stats.totalUsers}</p>
         </div>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[var(--ink)]/40 backdrop-blur-sm page-fade">
-          <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 md:p-8 shadow-2xl reveal">
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/50 pb-4">
-              <div>
-                <h2 className="text-2xl font-semibold text-slate-900">
-                  {editingId ? t.editTitle[language] : t.addTitle[language]}
-                </h2>
-                <p className="mt-1 text-sm text-slate-600">{t.formHelp[language]}</p>
-              </div>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
-              >
-                <span aria-hidden="true" className="text-xl leading-none">&times;</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700">{t.name[language]} *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(event) => setFormData({ ...formData, name: event.target.value })}
-                    className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700">{t.email[language]} *</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(event) => setFormData({ ...formData, email: event.target.value })}
-                    className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700">
-                    {t.password[language]} {!editingId && '*'}
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(event) => setFormData({ ...formData, password: event.target.value })}
-                    className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
-                    required={!editingId}
-                  />
-                  {editingId && (
-                    <p className="mt-1 text-xs text-slate-500">{t.passwordHelp[language]}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700">{t.role[language]}</label>
-                  <select
-                    value={formData.role}
-                    onChange={(event) => setFormData({ ...formData, role: event.target.value })}
-                    className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-200/50 mt-6">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-full bg-[var(--gold)] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 shadow-sm"
-                >
-                  {saving ? t.saving[language] : t.save[language]}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-                >
-                  {t.cancel[language]}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--ink)]/40 backdrop-blur-sm page-fade">
-          <div className="glass-card w-full max-w-md rounded-3xl p-6 shadow-2xl reveal">
-            <div className="text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 mb-4">
-                <svg className="h-8 w-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900">{t.deleteConfirm[language]}</h3>
-            </div>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="inline-flex justify-center rounded-full bg-rose-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rose-700"
-              >
-                {t.delete[language]}
-              </button>
-              <button
-                type="button"
-                onClick={cancelDelete}
-                className="inline-flex justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-              >
-                {t.cancel[language]}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="glass-card rounded-2xl p-4 reveal reveal-delay-1 transition-all duration-300 hover:shadow-lg">
+      {/* Control Bar (Filters & Search) */}
+      <div className="glass-card rounded-2xl p-4 bg-white/80 border border-slate-100/60 shadow-sm reveal reveal-delay-1">
         <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_auto]">
-          <div>
-            <label className="sr-only">{t.search[language]}</label>
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={t.searchPlaceholder[language]}
-              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
+              className="w-full rounded-xl border border-slate-200 bg-white/80 pl-10 pr-4 py-3 text-xs outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)]"
             />
           </div>
+          
           <select
             value={sortBy}
             onChange={(event) => setSortBy(event.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
+            className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)]"
             aria-label={t.sortBy[language]}
           >
             {sortOptions.map(option => (
               <option key={option} value={option}>{t.sortOptions[option][language]}</option>
             ))}
           </select>
+          
           <button
             type="button"
             onClick={clearFilters}
-            className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            className="rounded-full border border-slate-200 bg-white px-6 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:bg-slate-50 hover:border-slate-300"
           >
             {t.reset[language]}
           </button>
         </div>
       </div>
 
-      <div className="glass-card overflow-hidden rounded-2xl reveal reveal-delay-2 transition-all duration-300 hover:shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/70 px-5 py-4">
+      {/* Main Users Card */}
+      <div className="glass-card overflow-hidden rounded-2xl bg-white/80 border border-slate-100/60 shadow-sm reveal reveal-delay-2">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">{t.listTitle[language]}</h2>
-            <p className="text-sm text-slate-600">
+            <h2 className="text-base font-bold text-slate-800">{t.listTitle[language]}</h2>
+            <p className="text-xs text-slate-400 font-medium mt-1">
               {filteredUsers.length} {t.results[language]}
             </p>
           </div>
           <button
             type="button"
             onClick={fetchData}
-            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:bg-slate-50"
           >
             {t.refresh[language]}
           </button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="border-b border-white/70 bg-white/70">
+          <table className="w-full min-w-[640px] text-sm text-left">
+            <thead className="border-b border-slate-100 bg-slate-50/50">
               <tr>
-                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.name[language]}</th>
-                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.email[language]}</th>
-                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.role[language]}</th>
-                <th className="px-5 py-4 text-right font-semibold text-slate-600">{t.actions[language]}</th>
+                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.name[language]}</th>
+                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.email[language]}</th>
+                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.role[language]}</th>
+                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px] text-right">{t.actions[language]}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {paginatedUsers.map((user) => {
                 const isDeleting = deletingId === user.id;
+                const userInitials = (user.name || '?').charAt(0).toUpperCase();
 
                 return (
-                  <tr key={user.id} className="border-b border-white/70 transition hover:bg-white/60">
-                    <td className="px-5 py-4 font-semibold text-slate-900">
+                  <tr key={user.id} className="transition hover:bg-slate-50/30 group">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--gold-soft)] text-[var(--gold-deep)] font-bold">
-                          {(user.name || '?').charAt(0).toUpperCase()}
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[var(--gold)] to-[var(--gold-deep)] text-white text-xs font-bold shadow-sm shadow-[var(--gold)]/20 flex-shrink-0 group-hover:scale-105 transition duration-150">
+                          {userInitials}
                         </div>
-                        {user.name}
+                        <span className="font-semibold text-slate-800 text-sm group-hover:text-[var(--gold-deep)] transition-colors">{user.name}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-slate-600">
-                      {user.email || '-'}
-                    </td>
-                    <td className="px-5 py-4 text-slate-600">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${user.role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+                    <td className="px-6 py-4 text-slate-600 text-xs font-semibold">{user.email || '-'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
+                        user.role === 'admin' 
+                          ? 'bg-[var(--gold-soft)] text-[var(--gold-deep)] border-[var(--gold)]/20' 
+                          : 'bg-slate-50 text-slate-500 border-slate-200/60'
+                      }`}>
                         {user.role || 'user'}
                       </span>
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="flex justify-end gap-2">
-                        <ActionMenu 
-                          onEdit={() => handleEdit(user)}
-                          onDelete={() => handleDelete(user.id)}
-                          isDeleting={isDeleting}
-                          language={language}
-                          t={t}
-                        />
-                      </div>
+                    <td className="px-6 py-4 text-right">
+                      <ActionMenu 
+                        onEdit={() => handleEdit(user)}
+                        onDelete={() => handleDelete(user.id)}
+                        isDeleting={isDeleting}
+                        language={language}
+                        t={t}
+                      />
                     </td>
                   </tr>
                 );
@@ -525,38 +398,39 @@ export default function ManageUsers() {
           </table>
         </div>
 
+        {/* Pagination */}
         {filteredUsers.length > 0 && totalPages > 1 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/70 bg-white/70 px-5 py-4 text-sm">
-            <div className="text-xs uppercase tracking-[0.25em] text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/30 px-6 py-4 text-sm">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               {t.page[language]} {currentPageSafe} {t.of[language]} {totalPages}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 disabled={currentPageSafe === 1}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none"
               >
                 {t.prev[language]}
               </button>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 {pageItems.map((item) =>
                   typeof item === 'number' ? (
                     <button
                       key={item}
                       type="button"
                       onClick={() => setCurrentPage(item)}
-                      className={`h-9 w-9 rounded-full text-xs font-semibold transition ${
+                      className={`h-8 w-8 rounded-full text-xs font-bold transition duration-150 ${
                         item === currentPageSafe
-                          ? 'bg-[var(--ink)] text-white'
+                          ? 'bg-[var(--gold)] text-white shadow-sm shadow-[var(--gold)]/30'
                           : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                       }`}
                     >
                       {item}
                     </button>
                   ) : (
-                    <span key={item} className="px-2 text-xs text-slate-400">
+                    <span key={item} className="px-1 text-slate-400 text-xs font-bold">
                       ...
                     </span>
                   )
@@ -567,7 +441,7 @@ export default function ManageUsers() {
                 type="button"
                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                 disabled={currentPageSafe === totalPages}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none"
               >
                 {t.next[language]}
               </button>
@@ -576,16 +450,143 @@ export default function ManageUsers() {
         )}
 
         {filteredUsers.length === 0 && (
-          <div className="px-6 py-12 text-center">
-            <p className="font-semibold text-slate-800">{t.noUsers[language]}</p>
-            <p className="mt-2 text-sm text-slate-600">{t.noUsersHelp[language]}</p>
-            <button onClick={handleAdd} className="mt-5 btn-primary">
+          <div className="px-6 py-16 text-center">
+            <p className="font-semibold text-slate-700">{t.noUsers[language]}</p>
+            <p className="mt-2 text-xs text-slate-400">{t.noUsersHelp[language]}</p>
+            <button onClick={handleAdd} className="mt-6 btn-primary">
               <span aria-hidden="true">+</span>
               {t.addUser[language]}
             </button>
           </div>
         )}
       </div>
+
+      {/* Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/40 backdrop-blur-sm page-fade">
+          <div className="bg-[#fffaf0] border border-slate-200/60 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 md:p-8 shadow-2xl reveal">
+            <div className="mb-6 flex items-center justify-between border-b border-slate-200/50 pb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  {editingId ? t.editTitle[language] : t.addTitle[language]}
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">{t.formHelp[language]}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200/60 text-slate-500 transition hover:bg-slate-200"
+              >
+                <span aria-hidden="true" className="text-lg leading-none">&times;</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">{t.name[language]} *</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(event) => setFormData({ ...formData, name: event.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)]"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">{t.email[language]} *</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(event) => setFormData({ ...formData, email: event.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">
+                    {t.password[language]} {!editingId && '*'}
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(event) => setFormData({ ...formData, password: event.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)]"
+                    required={!editingId}
+                  />
+                  {editingId && (
+                    <p className="text-[10px] text-slate-400 mt-1">{t.passwordHelp[language]}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">{t.role[language]}</label>
+                  <select
+                    value={formData.role}
+                    onChange={(event) => setFormData({ ...formData, role: event.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)]"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-slate-200/50 justify-end mt-8">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="rounded-full border border-slate-200 bg-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:bg-slate-50"
+                >
+                  {t.cancel[language]}
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-full bg-[var(--gold)] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:shadow-md disabled:opacity-60 disabled:pointer-events-none"
+                >
+                  {saving ? t.saving[language] : t.save[language]}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm page-fade">
+          <div className="bg-white border border-slate-200/60 w-full max-w-md rounded-2xl p-6 shadow-2xl reveal text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 border border-rose-100 text-rose-600 mb-4">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">{t.deleteConfirm[language]}</h3>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+              Are you sure you want to permanently delete this user account? This action cannot be undone.
+            </p>
+            <div className="mt-6 flex gap-3 justify-center">
+              <button
+                type="button"
+                onClick={cancelDelete}
+                className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:bg-slate-50"
+              >
+                {t.cancel[language]}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="rounded-full bg-rose-600 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-rose-700 shadow-sm"
+              >
+                {t.delete[language]}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

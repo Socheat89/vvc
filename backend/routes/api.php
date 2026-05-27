@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\ImageProxyController;
+use App\Http\Controllers\Api\TranslationController;
 
 // Public routes
 Route::get('/products', [ProductController::class, 'index']);
@@ -20,6 +21,7 @@ Route::get('/banners', [BannerController::class, 'index']);
 Route::get('/banners/{id}', [BannerController::class, 'show']);
 
 Route::get('/image-proxy', [ImageProxyController::class, 'show']);
+Route::get('/translations', [TranslationController::class, 'index']);
 
 // Auth routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -53,5 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/banners/{id}', [BannerController::class, 'update']);
         Route::put('/banners/{id}', [BannerController::class, 'update']);
         Route::delete('/banners/{id}', [BannerController::class, 'destroy']);
+
+        Route::post('/translations', [TranslationController::class, 'store']);
+        Route::post('/translations/reset', [TranslationController::class, 'reset']);
     });
 });

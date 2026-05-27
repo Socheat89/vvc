@@ -173,4 +173,10 @@ export const bannerService = {
   delete: (id) => api.delete(`/banners/${id}`),
 };
 
+export const translationService = {
+  getAll: () => api.get('/translations'),
+  save: (translations) => api.post('/translations', { translations }),
+  reset: () => api.post('/translations/reset'),
+};
+
 export default api;

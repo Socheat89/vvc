@@ -1820,4 +1820,28 @@ const translations = {
   },
 };
 
+// Load and merge custom translations from localStorage if available
+try {
+  const customTranslationsStr = localStorage.getItem('vvc_custom_translations');
+  if (customTranslationsStr) {
+    const customTranslations = JSON.parse(customTranslationsStr);
+    Object.keys(customTranslations).forEach((category) => {
+      if (translations[category]) {
+        Object.keys(customTranslations[category]).forEach((key) => {
+          if (translations[category][key]) {
+            if (customTranslations[category][key].en !== undefined) {
+              translations[category][key].en = customTranslations[category][key].en;
+            }
+            if (customTranslations[category][key].kh !== undefined) {
+              translations[category][key].kh = customTranslations[category][key].kh;
+            }
+          }
+        });
+      }
+    });
+  }
+} catch (e) {
+  console.error('Failed to load custom translations:', e);
+}
+
 export default translations;
