@@ -46,6 +46,20 @@ const normalizeForm = (settings) => ({
   removeLogo: false,
 });
 
+const getRequestErrorMessage = (error, fallback) => {
+  const serverMessage = error?.response?.data?.message;
+
+  if (serverMessage) {
+    return `${fallback} ${serverMessage}`;
+  }
+
+  if (error?.message) {
+    return `${fallback} ${error.message}`;
+  }
+
+  return fallback;
+};
+
 export default function ManageSettings() {
   const { language } = useLanguage();
   const { applySettings } = useSiteSettings();
@@ -76,7 +90,7 @@ export default function ManageSettings() {
       setFormData(normalizeForm(response.data.data));
       setError('');
     } catch (err) {
-      setError(copy.loadFailed[language]);
+      setError(getRequestErrorMessage(err, copy.loadFailed[language]));
       console.error(err);
     } finally {
       setLoading(false);
@@ -159,7 +173,7 @@ export default function ManageSettings() {
         fileInputRef.current.value = '';
       }
     } catch (err) {
-      setError(err.response?.data?.message || copy.saveFailed[language]);
+      setError(getRequestErrorMessage(err, copy.saveFailed[language]));
       console.error(err);
     } finally {
       setSaving(false);
