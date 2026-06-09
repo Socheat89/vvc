@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { useSiteSettings } from '../../context/SiteSettingsContext';
-import { DEFAULT_ABOUT_CONTENT } from '../../constants/siteDefaults';
+import { getLocalizedSetting, useSiteSettings } from '../../context/SiteSettingsContext';
+import {
+  DEFAULT_ABOUT_CONTENT,
+  DEFAULT_ABOUT_CONTENT_EN,
+  DEFAULT_ABOUT_CONTENT_KH,
+} from '../../constants/siteDefaults';
 import translations from '../../translations';
 import { bannerService } from '../../services/api';
 
@@ -109,10 +113,13 @@ export default function About() {
   const t = translations.aboutPage;
   const [heroBanner, setHeroBanner] = useState('');
   const [bannerLoadFailed, setBannerLoadFailed] = useState(false);
-  const aboutContent = String(settings?.about_content || DEFAULT_ABOUT_CONTENT).replace(/\r\n/g, '\n').trim();
+  const defaultAboutContent = language === 'en' ? DEFAULT_ABOUT_CONTENT_EN : DEFAULT_ABOUT_CONTENT_KH;
+  const aboutContent = String(
+    getLocalizedSetting(settings, 'about_content', language, defaultAboutContent || DEFAULT_ABOUT_CONTENT)
+  ).replace(/\r\n/g, '\n').trim();
   const aboutLines = aboutContent.split('\n');
   const aboutTitleIndex = aboutLines.findIndex((line) => line.trim());
-  const aboutTitle = aboutTitleIndex >= 0 ? aboutLines[aboutTitleIndex].trim() : t.tagline[language];
+  const aboutTitle = aboutTitleIndex >= 0 ? aboutLines[aboutTitleIndex].trim() : t.tagline?.[language];
   const aboutParagraphs = aboutLines
     .slice(aboutTitleIndex + 1)
     .join('\n')

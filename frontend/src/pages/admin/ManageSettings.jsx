@@ -5,18 +5,34 @@ import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { getSiteLogoUrl } from '../../utils/assetUrls';
 import {
   DEFAULT_ABOUT_CONTENT,
+  DEFAULT_ABOUT_CONTENT_EN,
+  DEFAULT_ABOUT_CONTENT_KH,
+  DEFAULT_LOGO_NAME_EN,
+  DEFAULT_LOGO_NAME_KH,
   DEFAULT_PRIVACY_CONTENT,
+  DEFAULT_PRIVACY_CONTENT_EN,
+  DEFAULT_PRIVACY_CONTENT_KH,
   DEFAULT_TERMS_CONTENT,
+  DEFAULT_TERMS_CONTENT_EN,
+  DEFAULT_TERMS_CONTENT_KH,
 } from '../../constants/siteDefaults';
 import fallbackLogo from '../../assets/logo.png';
 
 const defaultForm = {
   website_name: 'Van Van Cambodia',
-  logo_name: 'Van Van Cambodia',
+  logo_name: DEFAULT_LOGO_NAME_KH,
+  logo_name_kh: DEFAULT_LOGO_NAME_KH,
+  logo_name_en: DEFAULT_LOGO_NAME_EN,
   logo: '',
   about_content: DEFAULT_ABOUT_CONTENT,
+  about_content_kh: DEFAULT_ABOUT_CONTENT_KH,
+  about_content_en: DEFAULT_ABOUT_CONTENT_EN,
   privacy_content: DEFAULT_PRIVACY_CONTENT,
+  privacy_content_kh: DEFAULT_PRIVACY_CONTENT_KH,
+  privacy_content_en: DEFAULT_PRIVACY_CONTENT_EN,
   terms_content: DEFAULT_TERMS_CONTENT,
+  terms_content_kh: DEFAULT_TERMS_CONTENT_KH,
+  terms_content_en: DEFAULT_TERMS_CONTENT_EN,
   logoFile: null,
   removeLogo: false,
 };
@@ -64,10 +80,18 @@ const copy = {
 const normalizeForm = (settings) => ({
   website_name: settings?.website_name || defaultForm.website_name,
   logo_name: settings?.logo_name || settings?.website_name || defaultForm.logo_name,
+  logo_name_kh: settings?.logo_name_kh ?? settings?.logo_name ?? defaultForm.logo_name_kh,
+  logo_name_en: settings?.logo_name_en ?? settings?.logo_name ?? defaultForm.logo_name_en,
   logo: settings?.logo || '',
   about_content: settings?.about_content ?? defaultForm.about_content,
+  about_content_kh: settings?.about_content_kh ?? settings?.about_content ?? defaultForm.about_content_kh,
+  about_content_en: settings?.about_content_en ?? defaultForm.about_content_en,
   privacy_content: settings?.privacy_content ?? defaultForm.privacy_content,
+  privacy_content_kh: settings?.privacy_content_kh ?? settings?.privacy_content ?? defaultForm.privacy_content_kh,
+  privacy_content_en: settings?.privacy_content_en ?? defaultForm.privacy_content_en,
   terms_content: settings?.terms_content ?? defaultForm.terms_content,
+  terms_content_kh: settings?.terms_content_kh ?? settings?.terms_content ?? defaultForm.terms_content_kh,
+  terms_content_en: settings?.terms_content_en ?? defaultForm.terms_content_en,
   logoFile: null,
   removeLogo: false,
 });
@@ -175,12 +199,29 @@ export default function ManageSettings() {
       setError('');
       setMessage('');
 
+      const logoNameKh = formData.logo_name_kh.trim();
+      const logoNameEn = formData.logo_name_en.trim();
+      const aboutContentKh = formData.about_content_kh.trim();
+      const aboutContentEn = formData.about_content_en.trim();
+      const privacyContentKh = formData.privacy_content_kh.trim();
+      const privacyContentEn = formData.privacy_content_en.trim();
+      const termsContentKh = formData.terms_content_kh.trim();
+      const termsContentEn = formData.terms_content_en.trim();
+
       const payload = new FormData();
       payload.append('website_name', formData.website_name.trim());
-      payload.append('logo_name', formData.logo_name.trim());
-      payload.append('about_content', formData.about_content.trim());
-      payload.append('privacy_content', formData.privacy_content.trim());
-      payload.append('terms_content', formData.terms_content.trim());
+      payload.append('logo_name', logoNameKh || logoNameEn);
+      payload.append('logo_name_kh', logoNameKh);
+      payload.append('logo_name_en', logoNameEn);
+      payload.append('about_content', aboutContentKh || aboutContentEn);
+      payload.append('about_content_kh', aboutContentKh);
+      payload.append('about_content_en', aboutContentEn);
+      payload.append('privacy_content', privacyContentKh || privacyContentEn);
+      payload.append('privacy_content_kh', privacyContentKh);
+      payload.append('privacy_content_en', privacyContentEn);
+      payload.append('terms_content', termsContentKh || termsContentEn);
+      payload.append('terms_content_kh', termsContentKh);
+      payload.append('terms_content_en', termsContentEn);
 
       if (formData.removeLogo) {
         payload.append('remove_logo', '1');
@@ -210,7 +251,12 @@ export default function ManageSettings() {
   };
 
   const previewLogo = logoPreview || getSiteLogoUrl(formData.logo) || fallbackLogo;
-  const previewName = formData.logo_name || formData.website_name || defaultForm.logo_name;
+  const previewName = formData[`logo_name_${language}`]
+    || formData.logo_name_kh
+    || formData.logo_name_en
+    || formData.logo_name
+    || formData.website_name
+    || defaultForm.logo_name;
 
   if (loading) {
     return (
@@ -272,26 +318,56 @@ export default function ManageSettings() {
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               {copy.logoName[language]}
             </label>
-            <input
-              type="text"
-              name="logo_name"
-              value={formData.logo_name}
-              onChange={handleChange}
-              className="w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm focus:border-[var(--gold)] focus:outline-none transition"
-            />
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">KM</span>
+                <input
+                  type="text"
+                  name="logo_name_kh"
+                  value={formData.logo_name_kh}
+                  onChange={handleChange}
+                  className="w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm focus:border-[var(--gold)] focus:outline-none transition"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">EN</span>
+                <input
+                  type="text"
+                  name="logo_name_en"
+                  value={formData.logo_name_en}
+                  onChange={handleChange}
+                  className="w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm focus:border-[var(--gold)] focus:outline-none transition"
+                />
+              </label>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               {copy.aboutContent[language]}
             </label>
-            <textarea
-              name="about_content"
-              value={formData.about_content}
-              onChange={handleChange}
-              rows={16}
-              className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
-            />
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">KM</span>
+                <textarea
+                  name="about_content_kh"
+                  value={formData.about_content_kh}
+                  onChange={handleChange}
+                  rows={14}
+                  className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">EN</span>
+                <textarea
+                  name="about_content_en"
+                  value={formData.about_content_en}
+                  onChange={handleChange}
+                  rows={14}
+                  className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+                />
+              </label>
+            </div>
             <p className="mt-2 text-xs text-slate-500">
               {copy.aboutContentHelp[language]}
             </p>
@@ -301,13 +377,28 @@ export default function ManageSettings() {
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               {copy.privacyContent[language]}
             </label>
-            <textarea
-              name="privacy_content"
-              value={formData.privacy_content}
-              onChange={handleChange}
-              rows={14}
-              className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
-            />
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">KM</span>
+                <textarea
+                  name="privacy_content_kh"
+                  value={formData.privacy_content_kh}
+                  onChange={handleChange}
+                  rows={12}
+                  className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">EN</span>
+                <textarea
+                  name="privacy_content_en"
+                  value={formData.privacy_content_en}
+                  onChange={handleChange}
+                  rows={12}
+                  className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+                />
+              </label>
+            </div>
             <p className="mt-2 text-xs text-slate-500">
               {copy.privacyContentHelp[language]}
             </p>
@@ -317,13 +408,28 @@ export default function ManageSettings() {
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               {copy.termsContent[language]}
             </label>
-            <textarea
-              name="terms_content"
-              value={formData.terms_content}
-              onChange={handleChange}
-              rows={14}
-              className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
-            />
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">KM</span>
+                <textarea
+                  name="terms_content_kh"
+                  value={formData.terms_content_kh}
+                  onChange={handleChange}
+                  rows={12}
+                  className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">EN</span>
+                <textarea
+                  name="terms_content_en"
+                  value={formData.terms_content_en}
+                  onChange={handleChange}
+                  rows={12}
+                  className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+                />
+              </label>
+            </div>
             <p className="mt-2 text-xs text-slate-500">
               {copy.termsContentHelp[language]}
             </p>

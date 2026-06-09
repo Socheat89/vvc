@@ -12,6 +12,47 @@ use Illuminate\Support\Str;
 
 class SiteSettingController extends Controller
 {
+    private const DEFAULT_LOGO_NAME_KH = 'Van Van Cambodia';
+    private const DEFAULT_LOGO_NAME_EN = 'Van Van Cambodia';
+
+    private const DEFAULT_ABOUT_CONTENT_EN = <<<'TEXT'
+About Us
+Welcome to Van Van Cambodia.
+We supply beverage ingredients and packaging materials for cafes, bubble tea shops, drink shops, and small businesses. Our goal is to make it easier for customers to understand product quality, usage, and value before choosing.
+
+What we supply: Bubble tea ingredients, syrups, jellies, plastic cups, bags, and related packaging materials.
+
+Our mission: We focus on reliable quality, fair pricing, and fast service so business owners can buy with confidence.
+
+Why choose us: We check products carefully, provide practical product information, and support customers with clear service.
+TEXT;
+
+    private const DEFAULT_PRIVACY_CONTENT_EN = <<<'TEXT'
+Privacy Policy
+We respect customer privacy and protect the personal information shared with us when ordering products.
+
+Information we collect: We may collect your name, phone number, delivery address, and order details so we can process and deliver your order.
+
+How we use information: We use customer information to confirm orders, arrange delivery, provide customer support, and share product or promotion updates when appropriate.
+
+Information sharing: We do not sell or rent your personal information. Delivery details may be shared only with delivery partners when needed to complete an order.
+
+Data protection: We use reasonable safeguards to protect customer information from unauthorized access, loss, or misuse.
+TEXT;
+
+    private const DEFAULT_TERMS_CONTENT_EN = <<<'TEXT'
+Terms of Service
+By placing an order with us, you agree to the following terms.
+
+Products: We supply beverage ingredients and packaging materials such as bubble tea ingredients, plastic cups, bags, syrups, jellies, and related products. Product photos and descriptions are for reference and packaging may vary slightly from the manufacturer.
+
+Prices and payment: Product prices may change based on market conditions. Once an order is confirmed, the confirmed price will not be changed for that order.
+
+Delivery: Delivery is arranged after order confirmation. Delivery fees and timing depend on order size and customer location.
+
+Exchange and refund: Purchased products are not refundable. We will exchange products if they are damaged due to our mistake, do not match the order, or are expired. Customers should check products immediately after receiving them and report issues within the stated claim period.
+TEXT;
+
     private const DEFAULT_ABOUT_CONTENT = <<<'TEXT'
 អំពីយើង (About Us)
 សូមស្វាគមន៍មកកាន់ វណ្ណ វណ្ណ ខេមបូឌា!
@@ -91,9 +132,17 @@ TEXT;
         $validated = $request->validate([
             'website_name' => 'required|string|max:255',
             'logo_name' => 'nullable|string|max:255',
+            'logo_name_kh' => 'nullable|string|max:255',
+            'logo_name_en' => 'nullable|string|max:255',
             'about_content' => 'nullable|string|max:30000',
+            'about_content_kh' => 'nullable|string|max:30000',
+            'about_content_en' => 'nullable|string|max:30000',
             'privacy_content' => 'nullable|string|max:30000',
+            'privacy_content_kh' => 'nullable|string|max:30000',
+            'privacy_content_en' => 'nullable|string|max:30000',
             'terms_content' => 'nullable|string|max:30000',
+            'terms_content_kh' => 'nullable|string|max:30000',
+            'terms_content_en' => 'nullable|string|max:30000',
             'logo_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
             'remove_logo' => 'nullable|boolean',
         ]);
@@ -121,9 +170,17 @@ TEXT;
         return SiteSetting::query()->first() ?: SiteSetting::create([
             'website_name' => 'Van Van Cambodia',
             'logo_name' => 'Van Van Cambodia',
+            'logo_name_kh' => self::DEFAULT_LOGO_NAME_KH,
+            'logo_name_en' => self::DEFAULT_LOGO_NAME_EN,
             'about_content' => self::DEFAULT_ABOUT_CONTENT,
+            'about_content_kh' => self::DEFAULT_ABOUT_CONTENT,
+            'about_content_en' => self::DEFAULT_ABOUT_CONTENT_EN,
             'privacy_content' => self::DEFAULT_PRIVACY_CONTENT,
+            'privacy_content_kh' => self::DEFAULT_PRIVACY_CONTENT,
+            'privacy_content_en' => self::DEFAULT_PRIVACY_CONTENT_EN,
             'terms_content' => self::DEFAULT_TERMS_CONTENT,
+            'terms_content_kh' => self::DEFAULT_TERMS_CONTENT,
+            'terms_content_en' => self::DEFAULT_TERMS_CONTENT_EN,
         ]);
     }
 
