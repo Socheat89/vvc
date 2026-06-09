@@ -5,21 +5,26 @@ import { useLanguage } from '../context/LanguageContext';
 import { useSiteSettings } from '../context/SiteSettingsContext';
 import translations from '../translations';
 
+const getTranslation = (entry, language, fallback) =>
+  entry?.[language] ?? entry?.kh ?? entry?.en ?? fallback;
+
 export default function Header() {
   const { language, toggleLanguage } = useLanguage();
   const { displayName, logoUrl } = useSiteSettings();
   const t = translations;
+  const headerText = t.header || {};
+  const commonText = t.common || {};
   const brandLogo = logoUrl || logo;
   const brandName = displayName || 'Van Van Cambodia';
   const desktopNavItems = [
-    { to: '/', label: t.header.home[language], end: true },
-    { to: '/products', label: t.header.products[language] },
-    { to: '/about', label: t.header.about[language] },
+    { to: '/', label: getTranslation(headerText.home, language, 'Home'), end: true },
+    { to: '/products', label: getTranslation(headerText.products, language, 'Products') },
+    { to: '/about', label: getTranslation(headerText.about, language, 'About') },
   ];
   const mobileNavItems = [
     {
       to: '/',
-      label: t.header.home[language],
+      label: getTranslation(headerText.home, language, 'Home'),
       icon: (
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M4 10.8 12 4l8 6.8V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -28,7 +33,7 @@ export default function Header() {
     },
     {
       to: '/products',
-      label: t.header.products[language],
+      label: getTranslation(headerText.products, language, 'Products'),
       icon: (
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M5 7.5 12 4l7 3.5v9L12 20l-7-3.5v-9Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -38,7 +43,7 @@ export default function Header() {
     },
     {
       to: '/about',
-      label: t.header.about[language],
+      label: getTranslation(headerText.about, language, 'About'),
       icon: (
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 17v-6M12 8h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -84,7 +89,7 @@ export default function Header() {
               <line x1="2" y1="12" x2="22" y2="12" />
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
-            {t.common.languageToggle[language]}
+            {getTranslation(commonText.languageToggle, language, language === 'kh' ? 'EN' : 'ខ្មែរ')}
           </button>
         </div>
 
@@ -99,10 +104,10 @@ export default function Header() {
               <line x1="2" y1="12" x2="22" y2="12" />
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
-            {t.common.languageToggle[language]}
+            {getTranslation(commonText.languageToggle, language, language === 'kh' ? 'EN' : 'ខ្មែរ')}
           </button>
           <Link to="/products" className="public-mobile-action btn-primary text-sm">
-            {t.header.explore[language]}
+            {getTranslation(headerText.explore, language, 'Explore')}
           </Link>
         </div>
       </nav>

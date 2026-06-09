@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import translations from '../translations';
 
+const getTranslation = (entry, language, fallback) =>
+  entry?.[language] ?? entry?.kh ?? entry?.en ?? fallback;
+
 const socialLinks = [
   {
     key: 'telegram',
@@ -59,7 +62,12 @@ export default function Footer() {
   const { language } = useLanguage();
   const t = translations.footer;
   const currentYear = new Date().getFullYear();
-  const copyrightText = t.copyright[language].replace(/\b\d{4}\b/, currentYear);
+  const footerText = t || {};
+  const copyrightText = getTranslation(
+    footerText.copyright,
+    language,
+    '© 2024 VVC. All rights reserved.'
+  ).replace(/\b\d{4}\b/, currentYear);
 
   return (
     <footer className="mt-0 border-t border-[var(--stroke)] bg-white text-[var(--coal)]">
@@ -67,44 +75,48 @@ export default function Footer() {
         <div className="rounded-lg border border-[var(--stroke)] bg-[var(--fog)] p-10 shadow-sm">
           <div className="grid gap-10 md:grid-cols-4">
             <div>
-              <h3 className="text-lg font-semibold">{t.about[language]}</h3>
-              <p className="mt-4 text-sm text-slate-600">{t.aboutDesc[language]}</p>
+              <h3 className="text-lg font-semibold">{getTranslation(footerText.about, language, 'About')}</h3>
+              <p className="mt-4 text-sm text-slate-600">
+                {getTranslation(footerText.aboutDesc, language, 'VVC curates product stories and helpful product information.')}
+              </p>
               <Link to="/about" className="mt-4 inline-flex text-sm font-semibold text-[var(--gold)] hover:text-[var(--gold-deep)]">
-                {t.learnMore[language]}
+                {getTranslation(footerText.learnMore, language, 'Learn more')}
               </Link>
             </div>
             <div>
-              <h3 className="text-lg font-semibold">{productFooterText.title[language]}</h3>
+              <h3 className="text-lg font-semibold">{getTranslation(productFooterText.title, language, 'Products')}</h3>
               <ul className="mt-4 space-y-2 text-sm text-slate-600">
                 {productFooterText.links.map((item) => (
                   <li key={item.to}>
                     <Link to={item.to} className="hover:text-[var(--gold)]">
-                      {item.label[language]}
+                      {getTranslation(item.label, language, 'Products')}
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold">{t.support[language]}</h3>
+              <h3 className="text-lg font-semibold">{getTranslation(footerText.support, language, 'Support')}</h3>
               <ul className="mt-4 space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-[var(--gold)]">{t.contact[language]}</a></li>
-                <li><a href="#" className="hover:text-[var(--gold)]">{t.faq[language]}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)]">{getTranslation(footerText.contact, language, 'Contact')}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)]">{getTranslation(footerText.faq, language, 'FAQ')}</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold">{t.legal[language]}</h3>
+              <h3 className="text-lg font-semibold">{getTranslation(footerText.legal, language, 'Legal')}</h3>
               <ul className="mt-4 space-y-2 text-sm text-slate-600">
-                <li><Link to="/privacy" className="hover:text-[var(--gold)]">{t.privacy[language]}</Link></li>
-                <li><Link to="/terms" className="hover:text-[var(--gold)]">{t.terms[language]}</Link></li>
+                <li><Link to="/privacy" className="hover:text-[var(--gold)]">{getTranslation(footerText.privacy, language, 'Privacy')}</Link></li>
+                <li><Link to="/terms" className="hover:text-[var(--gold)]">{getTranslation(footerText.terms, language, 'Terms')}</Link></li>
               </ul>
             </div>
           </div>
 
           <div className="mt-8 flex flex-col gap-4 border-t border-[var(--stroke)] pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-lg font-semibold">{t.socialTitle[language]}</h3>
-              <p className="mt-2 text-sm text-slate-600">{t.socialDesc[language]}</p>
+              <h3 className="text-lg font-semibold">{getTranslation(footerText.socialTitle, language, 'Social media')}</h3>
+              <p className="mt-2 text-sm text-slate-600">
+                {getTranslation(footerText.socialDesc, language, 'Follow updates and connect with us.')}
+              </p>
             </div>
             <div className="flex flex-wrap gap-3">
               {socialLinks.map((item) => (
@@ -118,7 +130,7 @@ export default function Footer() {
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--gold-soft)] text-[var(--gold-deep)]">
                     {item.icon}
                   </span>
-                  {t[item.key][language]}
+                  {getTranslation(footerText[item.key], language, item.key)}
                 </a>
               ))}
             </div>
