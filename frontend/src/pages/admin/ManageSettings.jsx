@@ -3,12 +3,20 @@ import { settingsService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { getSiteLogoUrl } from '../../utils/assetUrls';
+import {
+  DEFAULT_ABOUT_CONTENT,
+  DEFAULT_PRIVACY_CONTENT,
+  DEFAULT_TERMS_CONTENT,
+} from '../../constants/siteDefaults';
 import fallbackLogo from '../../assets/logo.png';
 
 const defaultForm = {
   website_name: 'Van Van Cambodia',
   logo_name: 'Van Van Cambodia',
   logo: '',
+  about_content: DEFAULT_ABOUT_CONTENT,
+  privacy_content: DEFAULT_PRIVACY_CONTENT,
+  terms_content: DEFAULT_TERMS_CONTENT,
   logoFile: null,
   removeLogo: false,
 };
@@ -17,11 +25,26 @@ const copy = {
   eyebrow: { kh: 'ការកំណត់វេបសាយ', en: 'Website Settings' },
   title: { kh: 'ការកំណត់វេបសាយ', en: 'Website Settings' },
   subtitle: {
-    kh: 'កំណត់ឈ្មោះវេបសាយ ឈ្មោះលើឡូហ្គោ និងរូបឡូហ្គោសម្រាប់ frontend។',
-    en: 'Control the website name, logo label, and logo used across the frontend.',
+    kh: 'កំណត់ឈ្មោះវេបសាយ ឈ្មោះលើឡូហ្គោ រូបឡូហ្គោ និងខ្លឹមសារទំព័រ About / Privacy / Terms សម្រាប់ frontend។',
+    en: 'Control the website name, logo label, logo, and the About / Privacy / Terms page content used across the frontend.',
   },
   websiteName: { kh: 'ឈ្មោះវេបសាយ', en: 'Website name' },
   logoName: { kh: 'ឈ្មោះលើឡូហ្គោ', en: 'Logo name' },
+  aboutContent: { kh: 'មាតិកាទំព័រអំពី', en: 'About page content' },
+  aboutContentHelp: {
+    kh: 'អត្ថបទនេះនឹងបង្ហាញនៅទំព័រ About។ អាចចុះបន្ទាត់ថ្មីដើម្បីបំបែកជា paragraph។',
+    en: 'This text appears on the About page. Add line breaks to split it into paragraphs.',
+  },
+  privacyContent: { kh: 'មាតិកាទំព័រឯកជនភាព', en: 'Privacy policy content' },
+  privacyContentHelp: {
+    kh: 'អត្ថបទនេះនឹងបង្ហាញនៅទំព័រ Privacy។ អាចចុះបន្ទាត់ទទេដើម្បីបំបែកជា section។',
+    en: 'This text appears on the Privacy page. Use blank lines to split it into sections.',
+  },
+  termsContent: { kh: 'មាតិកាទំព័រលក្ខខណ្ឌ', en: 'Terms of service content' },
+  termsContentHelp: {
+    kh: 'អត្ថបទនេះនឹងបង្ហាញនៅទំព័រ Terms។ អាចចុះបន្ទាត់ទទេដើម្បីបំបែកជា section។',
+    en: 'This text appears on the Terms page. Use blank lines to split it into sections.',
+  },
   logoImage: { kh: 'រូបឡូហ្គោ', en: 'Logo image' },
   chooseLogo: { kh: 'ជ្រើសរើសរូបឡូហ្គោ', en: 'Choose logo' },
   changeLogo: { kh: 'ប្តូររូបឡូហ្គោ', en: 'Change logo' },
@@ -42,6 +65,9 @@ const normalizeForm = (settings) => ({
   website_name: settings?.website_name || defaultForm.website_name,
   logo_name: settings?.logo_name || settings?.website_name || defaultForm.logo_name,
   logo: settings?.logo || '',
+  about_content: settings?.about_content ?? defaultForm.about_content,
+  privacy_content: settings?.privacy_content ?? defaultForm.privacy_content,
+  terms_content: settings?.terms_content ?? defaultForm.terms_content,
   logoFile: null,
   removeLogo: false,
 });
@@ -152,6 +178,9 @@ export default function ManageSettings() {
       const payload = new FormData();
       payload.append('website_name', formData.website_name.trim());
       payload.append('logo_name', formData.logo_name.trim());
+      payload.append('about_content', formData.about_content.trim());
+      payload.append('privacy_content', formData.privacy_content.trim());
+      payload.append('terms_content', formData.terms_content.trim());
 
       if (formData.removeLogo) {
         payload.append('remove_logo', '1');
@@ -250,6 +279,54 @@ export default function ManageSettings() {
               onChange={handleChange}
               className="w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm focus:border-[var(--gold)] focus:outline-none transition"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              {copy.aboutContent[language]}
+            </label>
+            <textarea
+              name="about_content"
+              value={formData.about_content}
+              onChange={handleChange}
+              rows={16}
+              className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+            />
+            <p className="mt-2 text-xs text-slate-500">
+              {copy.aboutContentHelp[language]}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              {copy.privacyContent[language]}
+            </label>
+            <textarea
+              name="privacy_content"
+              value={formData.privacy_content}
+              onChange={handleChange}
+              rows={14}
+              className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+            />
+            <p className="mt-2 text-xs text-slate-500">
+              {copy.privacyContentHelp[language]}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              {copy.termsContent[language]}
+            </label>
+            <textarea
+              name="terms_content"
+              value={formData.terms_content}
+              onChange={handleChange}
+              rows={14}
+              className="w-full resize-y rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm leading-7 focus:border-[var(--gold)] focus:outline-none transition"
+            />
+            <p className="mt-2 text-xs text-slate-500">
+              {copy.termsContentHelp[language]}
+            </p>
           </div>
 
           <div>

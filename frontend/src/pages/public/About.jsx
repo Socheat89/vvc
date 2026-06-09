@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSiteSettings } from '../../context/SiteSettingsContext';
+import { DEFAULT_ABOUT_CONTENT } from '../../constants/siteDefaults';
 import translations from '../../translations';
 import { bannerService } from '../../services/api';
 
@@ -52,19 +52,74 @@ const getMediaTypeFromUrl = (media) => {
   return VIDEO_MEDIA_EXTENSIONS.has(extension) ? 'video' : 'image';
 };
 
+const splitLabelText = (text) => {
+  const separatorIndex = text.search(/[៖:]/);
+
+  if (separatorIndex <= 0 || separatorIndex > 48) {
+    return { label: '', text };
+  }
+
+  return {
+    label: text.slice(0, separatorIndex + 1).trim(),
+    text: text.slice(separatorIndex + 1).trim(),
+  };
+};
+
+const parseAboutBlock = (block, index) => {
+  const lines = block
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const firstLine = lines[0] || '';
+  const numberedMatch = firstLine.match(/^([0-9០១២៣៤៥៦៧៨៩]+)[.)]\s*(.+)$/);
+  const isContact = /^ទំនាក់ទំនង|^contact/i.test(firstLine);
+  const isClosing = firstLine.startsWith('[');
+
+  if (numberedMatch) {
+    const { label, text } = splitLabelText(numberedMatch[2]);
+    return {
+      type: 'section',
+      symbol: numberedMatch[1],
+      title: label || numberedMatch[2],
+      lines: [text, ...lines.slice(1)].filter(Boolean),
+    };
+  }
+
+  if (isContact) {
+    const { label, text } = splitLabelText(firstLine);
+    return {
+      type: 'contact',
+      symbol: '@',
+      title: label || firstLine,
+      lines: [text, ...lines.slice(1)].filter(Boolean),
+    };
+  }
+
+  return {
+    type: isClosing ? 'closing' : index === 0 ? 'intro' : 'note',
+    symbol: isClosing ? 'VVC' : '•',
+    title: '',
+    lines,
+  };
+};
+
 export default function About() {
   const { language } = useLanguage();
-  const { displayName } = useSiteSettings();
+  const { settings } = useSiteSettings();
   const t = translations.aboutPage;
-  const brandName = displayName || t.title[language] || 'Van Van Cambodia';
   const [heroBanner, setHeroBanner] = useState('');
   const [bannerLoadFailed, setBannerLoadFailed] = useState(false);
-
-  const values = [
-    { titleKey: 'value1Title', descKey: 'value1Desc' },
-    { titleKey: 'value2Title', descKey: 'value2Desc' },
-    { titleKey: 'value3Title', descKey: 'value3Desc' },
-  ];
+  const aboutContent = String(settings?.about_content || DEFAULT_ABOUT_CONTENT).replace(/\r\n/g, '\n').trim();
+  const aboutLines = aboutContent.split('\n');
+  const aboutTitleIndex = aboutLines.findIndex((line) => line.trim());
+  const aboutTitle = aboutTitleIndex >= 0 ? aboutLines[aboutTitleIndex].trim() : t.tagline[language];
+  const aboutParagraphs = aboutLines
+    .slice(aboutTitleIndex + 1)
+    .join('\n')
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+  const aboutBlocks = aboutParagraphs.map((paragraph, index) => parseAboutBlock(paragraph, index));
 
   useEffect(() => {
     let isMounted = true;
@@ -122,67 +177,45 @@ export default function About() {
         )}
         <div className="about-hero-shade" aria-hidden="true" />
 
-        <div className="about-hero-content mx-auto max-w-6xl px-4">
-          <div className="about-hero-copy reveal">
-            <span className="pill">{t.tagline[language]}</span>
-            <h1>
-              {brandName}
-              <span>{t.titleSpan[language]}</span>
-            </h1>
-            <p>{t.heroDesc[language]}</p>
-            <div className="about-hero-actions">
-              <Link to="/products" className="btn-primary">
-                {t.primaryCta[language]}
-              </Link>
-              <a href="#about-values" className="btn-secondary">
-                {t.secondaryCta[language]}
-              </a>
-            </div>
-          </div>
+        <div className="about-hero-content">
+          <span className="pill about-hero-pill reveal">{t.tagline[language]}</span>
         </div>
       </section>
 
-      <section className="about-mission-section">
-        <div className="about-mission-layout mx-auto max-w-6xl px-4">
-          <div className="about-section-copy reveal">
-            <span>{t.missionKicker[language]}</span>
-            <h2>{t.missionTitle[language]}</h2>
-            <p>{t.missionDesc[language]}</p>
+      <section className="about-content-section">
+        <article className="about-content-article mx-auto max-w-5xl px-4 reveal">
+          <header className="about-content-header">
+            <h2>{aboutTitle}</h2>
+          </header>
+
+          <div className="about-content-timeline">
+            {aboutBlocks.map((block, blockIndex) => (
+              <section
+                key={`${block.type}-${blockIndex}`}
+                className={`about-content-block about-content-block-${block.type}`}
+              >
+                <div className="about-content-symbol" aria-hidden="true">
+                  {block.symbol}
+                </div>
+                <div className="about-content-panel">
+                  {block.title && <h3>{block.title}</h3>}
+                  <div className="about-content-lines">
+                    {block.lines.map((line, lineIndex) => {
+                      const { label, text } = splitLabelText(line);
+
+                      return (
+                        <p key={`${line.slice(0, 24)}-${lineIndex}`} className="about-content-line">
+                          {label && <strong>{label}</strong>}
+                          {text}
+                        </p>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            ))}
           </div>
-
-          <div className="about-mission-statement reveal reveal-delay-1">
-            <p>{t.missionQuote[language]}</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="about-values" className="about-values-section mx-auto max-w-6xl px-4">
-        <div className="about-section-copy about-section-copy-centered reveal">
-          <span>{t.valuesKicker[language]}</span>
-          <h2>{t.valuesTitle[language]}</h2>
-        </div>
-
-        <div className="about-values-grid">
-          {values.map((value, index) => (
-            <article key={value.titleKey} className={`about-value-card reveal reveal-delay-${index + 1}`}>
-              <div>{String(index + 1).padStart(2, '0')}</div>
-              <h3>{t[value.titleKey][language]}</h3>
-              <p>{t[value.descKey][language]}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="about-cta-band">
-        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-14 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2>{t.ctaTitle[language]}</h2>
-            <p>{t.ctaDesc[language]}</p>
-          </div>
-          <Link to="/products" className="btn-primary">
-            {t.ctaButton[language]}
-          </Link>
-        </div>
+        </article>
       </section>
     </div>
   );

@@ -1,12 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { settingsService } from '../services/api';
 import { getSiteLogoUrl } from '../utils/assetUrls';
-
-const DEFAULT_SITE_SETTINGS = {
-  website_name: 'Van Van Cambodia',
-  logo_name: 'Van Van Cambodia',
-  logo: '',
-};
+import { DEFAULT_SITE_SETTINGS } from '../constants/siteDefaults';
 
 const SiteSettingsContext = createContext({
   settings: DEFAULT_SITE_SETTINGS,

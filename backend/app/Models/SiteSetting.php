@@ -10,5 +10,8 @@ class SiteSetting extends Model
         'website_name',
         'logo_name',
         'logo',
+        'about_content',
+        'privacy_content',
+        'terms_content',
     ];
 }

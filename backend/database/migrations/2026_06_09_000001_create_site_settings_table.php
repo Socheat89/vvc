@@ -13,6 +13,9 @@ return new class extends Migration
             $table->string('website_name')->default('Van Van Cambodia');
             $table->string('logo_name')->nullable();
             $table->string('logo')->nullable();
+            $table->text('about_content')->nullable();
+            $table->text('privacy_content')->nullable();
+            $table->text('terms_content')->nullable();
             $table->timestamps();
         });
     }

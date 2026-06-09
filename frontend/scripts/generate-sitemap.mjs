@@ -18,6 +18,8 @@ const staticRoutes = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/products', changefreq: 'daily', priority: '0.9' },
   { path: '/about', changefreq: 'monthly', priority: '0.7' },
+  { path: '/privacy', changefreq: 'monthly', priority: '0.5' },
+  { path: '/terms', changefreq: 'monthly', priority: '0.5' },
 ];
 
 const escapeXml = (value) =>

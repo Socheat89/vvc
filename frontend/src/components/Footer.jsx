@@ -95,8 +95,8 @@ export default function Footer() {
             <div>
               <h3 className="text-lg font-semibold">{t.legal[language]}</h3>
               <ul className="mt-4 space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-[var(--gold)]">{t.privacy[language]}</a></li>
-                <li><a href="#" className="hover:text-[var(--gold)]">{t.terms[language]}</a></li>
+                <li><Link to="/privacy" className="hover:text-[var(--gold)]">{t.privacy[language]}</Link></li>
+                <li><Link to="/terms" className="hover:text-[var(--gold)]">{t.terms[language]}</Link></li>
               </ul>
             </div>
           </div>
