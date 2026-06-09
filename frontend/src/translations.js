@@ -545,6 +545,18 @@ const translations = {
       kh: 'គ្រប់ប្រភេទ',
       en: 'All categories',
     },
+    brands: {
+      kh: 'ម៉ាក',
+      en: 'Brands',
+    },
+    allBrands: {
+      kh: 'ម៉ាកទាំងអស់',
+      en: 'All brands',
+    },
+    catalogFilters: {
+      kh: 'ប្រភេទ និងម៉ាក',
+      en: 'Categories & brands',
+    },
     newestFirst: {
       kh: 'ថ្មីបំផុតមុន',
       en: 'Newest first',
@@ -586,8 +598,8 @@ const translations = {
       en: 'Search',
     },
     searchPlaceholder: {
-      kh: 'ស្វែងរកតាមឈ្មោះ ការពិពណ៌នា ឬប្រភេទ...',
-      en: 'Search by name, description, or category...',
+      kh: 'ស្វែងរកតាមឈ្មោះ ការពិពណ៌នា ប្រភេទ ឬម៉ាក...',
+      en: 'Search by name, description, category, or brand...',
     },
     quickResults: {
       kh: 'ផលិតផលដែលត្រូវគ្នា',
@@ -646,8 +658,8 @@ const translations = {
       en: 'No products match your search',
     },
     emptyHelp: {
-      kh: 'សាកល្បងប្ដូរពាក្យស្វែងរក ប្រភេទ ឬស្ថានភាពស្តុក ដើម្បីរកមើលផលិតផលផ្សេងទៀត។',
-      en: 'Try changing your search, category, or stock filters to discover more products.',
+      kh: 'សាកល្បងប្ដូរពាក្យស្វែងរក ប្រភេទ ម៉ាក ឬស្ថានភាពស្តុក ដើម្បីរកមើលផលិតផលផ្សេងទៀត។',
+      en: 'Try changing your search, category, brand, or stock filters to discover more products.',
     },
     noDescription: {
       kh: 'មិនមានការពិពណ៌នា',
@@ -689,6 +701,14 @@ const translations = {
       kh: 'ប្រភេទ',
       en: 'Category',
     },
+    brand: {
+      kh: 'ម៉ាក',
+      en: 'Brand',
+    },
+    noBrand: {
+      kh: 'មិនមានម៉ាក',
+      en: 'No brand',
+    },
     price: {
       kh: 'តម្លៃ',
       en: 'Price',
@@ -729,6 +749,10 @@ const translations = {
       kh: 'ប្រភេទដូចគ្នា',
       en: 'Same category',
     },
+    sameBrand: {
+      kh: 'ម៉ាកដូចគ្នា',
+      en: 'Same brand',
+    },
     recommendedTitle: {
       kh: 'ផលិតផលណែនាំ',
       en: 'Recommended Products',
@@ -736,6 +760,10 @@ const translations = {
     recommendedDesc: {
       kh: 'ផលិតផលដែលស្ថិតក្នុងប្រភេទដូចគ្នា ដើម្បីជួយអ្នកប្រៀបធៀប និងជ្រើសរើសបានងាយស្រួល។',
       en: 'Products from the same category to help you compare and choose more easily.',
+    },
+    recommendedBrandDesc: {
+      kh: 'ផលិតផលដែលមានម៉ាកដូចគ្នា ទោះបីប្រភេទខុសគ្នាក៏ដោយ។',
+      en: 'Products from the same brand are shown even when they belong to different categories.',
     },
     viewProduct: {
       kh: 'មើលផលិតផល',
@@ -1374,8 +1402,8 @@ const translations = {
       en: 'Excel import format',
     },
     importHelp: {
-      kh: 'ប្រើ columns: No., Image, Item Code, Local Name, Name, Item Type, Item Group, Base Unit, Alarm Qty, Public Price, Wholesale Price, Partner Price, Unit Set Name, Memo, Revenue Account, Asset, COGS, On Hand។',
-      en: 'Use columns: No., Image, Item Code, Local Name, Name, Item Type, Item Group, Base Unit, Alarm Qty, Public Price, Wholesale Price, Partner Price, Unit Set Name, Memo, Revenue Account, Asset, COGS, On Hand.',
+      kh: 'ប្រើ columns: No., Image, Item Code, Local Name, Name, Brand, Item Type, Item Group, Base Unit, Alarm Qty, Public Price, Wholesale Price, Partner Price, Unit Set Name, Memo, Revenue Account, Asset, COGS, On Hand។',
+      en: 'Use columns: No., Image, Item Code, Local Name, Name, Brand, Item Type, Item Group, Base Unit, Alarm Qty, Public Price, Wholesale Price, Partner Price, Unit Set Name, Memo, Revenue Account, Asset, COGS, On Hand.',
     },
     importSuccess: {
       kh: 'នាំចូលបានជោគជ័យ។',
@@ -1432,6 +1460,18 @@ const translations = {
     category: {
       kh: 'ប្រភេទ',
       en: 'Category',
+    },
+    brand: {
+      kh: 'ម៉ាក',
+      en: 'Brand',
+    },
+    brandPlaceholder: {
+      kh: 'បញ្ចូលម៉ាកផលិតផល',
+      en: 'Enter product brand',
+    },
+    allBrands: {
+      kh: 'ម៉ាកទាំងអស់',
+      en: 'All brands',
     },
     selectCategory: {
       kh: 'ជ្រើសប្រភេទ',
@@ -1590,8 +1630,8 @@ const translations = {
       en: 'Search',
     },
     searchPlaceholder: {
-      kh: 'ស្វែងរកតាមឈ្មោះ ការពិពណ៌នា ឬប្រភេទ...',
-      en: 'Search by name, description, or category...',
+      kh: 'ស្វែងរកតាមឈ្មោះ ការពិពណ៌នា ប្រភេទ ឬម៉ាក...',
+      en: 'Search by name, description, category, or brand...',
     },
     allCategories: {
       kh: 'គ្រប់ប្រភេទ',

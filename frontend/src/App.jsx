@@ -14,39 +14,44 @@ import ManageUsers from './pages/admin/ManageUsers';
 import ManageTranslations from './pages/admin/ManageTranslations';
 import ManageBanners from './pages/admin/ManageBanners';
 import ManageSystem from './pages/admin/ManageSystem';
+import ManageSettings from './pages/admin/ManageSettings';
 import ProtectedRoute from './components/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
+import { SiteSettingsProvider } from './context/SiteSettingsContext';
 
 export default function App() {
   return (
     <LanguageProvider>
-      <Router basename={import.meta.env.BASE_URL}>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<PublicLayout />}>
-            <Route index element={<Home />} />
-            <Route path="about" element={<About />} />
-            <Route path="products" element={<ProductList />} />
-            <Route path="products/:id" element={<ProductDetail />} />
-          </Route>
+      <SiteSettingsProvider>
+        <Router basename={import.meta.env.BASE_URL}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<PublicLayout />}>
+              <Route index element={<Home />} />
+              <Route path="about" element={<About />} />
+              <Route path="products" element={<ProductList />} />
+              <Route path="products/:id" element={<ProductDetail />} />
+            </Route>
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
 
-          <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-            <Route index element={<Dashboard />} />
-            <Route path="products" element={<ManageProducts />} />
-            <Route path="categories" element={<ManageCategories />} />
-            <Route path="users" element={<ManageUsers />} />
-            <Route path="banners" element={<ManageBanners />} />
-            <Route path="translations" element={<ManageTranslations />} />
-            <Route path="system" element={<ManageSystem />} />
-          </Route>
+            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+              <Route index element={<Dashboard />} />
+              <Route path="products" element={<ManageProducts />} />
+              <Route path="categories" element={<ManageCategories />} />
+              <Route path="users" element={<ManageUsers />} />
+              <Route path="banners" element={<ManageBanners />} />
+              <Route path="translations" element={<ManageTranslations />} />
+              <Route path="settings" element={<ManageSettings />} />
+              <Route path="system" element={<ManageSystem />} />
+            </Route>
 
-          {/* 404 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+            {/* 404 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </SiteSettingsProvider>
     </LanguageProvider>
   );
 }

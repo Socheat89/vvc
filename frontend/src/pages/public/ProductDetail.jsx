@@ -6,7 +6,7 @@ import translations from '../../translations';
 import BackgroundRemovedImage from '../../components/BackgroundRemovedImage';
 import { getProductDisplayName } from '../../utils/productDisplay';
 
-const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
 const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
 
 const extractUploadPath = (value) => {
@@ -51,6 +51,9 @@ const getInitials = (name = '') => {
   const words = name.trim().split(/\s+/).filter(Boolean);
   return (words[0]?.[0] || 'V') + (words[1]?.[0] || 'V');
 };
+
+const normalizeBrandKey = (brand = '') => String(brand || '').trim().toLowerCase();
+const getBrandProductsUrl = (brand) => `/products?brand=${encodeURIComponent(brand)}`;
 
 const loadingFacts = Array.from({ length: 4 }, (_, index) => index);
 
@@ -107,11 +110,16 @@ export default function ProductDetail() {
       const allProducts = productListResult.status === 'fulfilled'
         ? productListResult.value.data.data || []
         : [];
+      const currentBrand = String(productData.brand || '').trim();
       const currentCategoryId = productData.category?.id || productData.category_id;
       const currentCategoryName = productData.category?.name;
       const recommendations = allProducts
         .filter((item) => {
           if (String(item.id) === String(productData.id)) return false;
+          if (currentBrand) {
+            return normalizeBrandKey(item.brand) === normalizeBrandKey(currentBrand);
+          }
+
           const itemCategoryId = item.category?.id || item.category_id;
           if (currentCategoryId && itemCategoryId) {
             return String(itemCategoryId) === String(currentCategoryId);
@@ -193,9 +201,12 @@ export default function ProductDetail() {
 
   const imageUrl = getImageUrl(product.image);
   const productName = getProductDisplayName(product, language);
+  const productBrand = String(product.brand || '').trim();
+  const productBrandUrl = productBrand ? getBrandProductsUrl(productBrand) : '';
   const hasImage = imageUrl && !imageError;
   const inStock = Number(product.stock) > 0;
   const details = [
+    { label: t.brand[language], value: productBrand || t.noBrand[language], href: productBrandUrl || null },
     { label: t.category[language], value: product.category?.name || t.uncategorized[language] },
     { label: t.stock[language], value: inStock ? `${product.stock} ${t.inStock[language]}` : t.outOfStock[language] },
     { label: t.itemCode[language], value: product.item_code || product.code || `#${product.id}` },
@@ -250,7 +261,7 @@ export default function ProductDetail() {
               )}
             </div>
             <div className="product-detail-media-caption">
-              <span>{product.category?.name || t.uncategorized[language]}</span>
+              <span>{[productBrand, product.category?.name || t.uncategorized[language]].filter(Boolean).join(' / ')}</span>
               <strong>{inStock ? t.available[language] : t.outOfStock[language]}</strong>
             </div>
           </div>
@@ -258,6 +269,11 @@ export default function ProductDetail() {
           <div className="product-detail-content">
             <div className="product-detail-kicker">{t.productPassport[language]}</div>
             <h1>{productName}</h1>
+            {productBrand && (
+              <Link to={productBrandUrl} className="product-detail-brand-link">
+                {t.brand[language]}: {productBrand}
+              </Link>
+            )}
 
             <div className="product-detail-price-row">
               <span>${Number(product.price || 0).toFixed(2)}</span>
@@ -275,7 +291,11 @@ export default function ProductDetail() {
               {details.map((item) => (
                 <div key={item.label} className="product-detail-fact">
                   <span>{item.label}</span>
-                  <strong>{item.value}</strong>
+                  {item.href ? (
+                    <Link to={item.href}>{item.value}</Link>
+                  ) : (
+                    <strong>{item.value}</strong>
+                  )}
                 </div>
               ))}
             </div>
@@ -292,11 +312,11 @@ export default function ProductDetail() {
           <section className="product-recommendation-section">
             <div className="product-recommendation-header">
               <div>
-                <span>{t.sameCategory[language]}</span>
+                <span>{productBrand ? t.sameBrand[language] : t.sameCategory[language]}</span>
                 <h2>{t.recommendedTitle[language]}</h2>
-                <p>{t.recommendedDesc[language]}</p>
+                <p>{productBrand ? t.recommendedBrandDesc[language] : t.recommendedDesc[language]}</p>
               </div>
-              <Link to="/products" className="product-detail-secondary-action">
+              <Link to={productBrand ? productBrandUrl : '/products'} className="product-detail-secondary-action">
                 {t.viewMore[language]}
               </Link>
             </div>
@@ -323,7 +343,7 @@ export default function ProductDetail() {
                       )}
                     </div>
                     <div className="product-recommendation-body">
-                      <span>{item.category?.name || t.uncategorized[language]}</span>
+                      <span>{[item.brand, item.category?.name || t.uncategorized[language]].filter(Boolean).join(' / ')}</span>
                       <h3>{itemName}</h3>
                       <div>
                         <strong className={itemPrice > 0 ? '' : 'product-recommendation-view-more'}>
@@ -361,7 +381,7 @@ export default function ProductDetail() {
               <BackgroundRemovedImage src={imageUrl} alt={productName} />
             </div>
             <div className="product-image-lightbox-caption">
-              <span>{product.category?.name || t.uncategorized[language]}</span>
+              <span>{[productBrand, product.category?.name || t.uncategorized[language]].filter(Boolean).join(' / ')}</span>
               <strong>{productName}</strong>
             </div>
           </div>

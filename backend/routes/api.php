@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\ImageProxyController;
 use App\Http\Controllers\Api\TranslationController;
 use App\Http\Controllers\Api\SystemController;
+use App\Http\Controllers\Api\SiteSettingController;
 
 // Public routes
 Route::get('/products', [ProductController::class, 'index']);
@@ -20,6 +21,8 @@ Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
 Route::get('/banners', [BannerController::class, 'index']);
 Route::get('/banners/{id}', [BannerController::class, 'show']);
+
+Route::get('/settings', [SiteSettingController::class, 'show']);
 
 Route::get('/image-proxy', [ImageProxyController::class, 'show']);
 Route::get('/translations', [TranslationController::class, 'index']);
@@ -63,5 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/system/status', [SystemController::class, 'status']);
         Route::post('/system/migrate', [SystemController::class, 'migrate']);
         Route::post('/system/cache-clear', [SystemController::class, 'clearCache']);
+
+        Route::post('/settings', [SiteSettingController::class, 'update']);
+        Route::put('/settings', [SiteSettingController::class, 'update']);
     });
 });

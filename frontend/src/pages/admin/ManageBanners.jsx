@@ -10,7 +10,7 @@ const emptyForm = {
   imageFile: null,
 };
 
-const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
 const BANNER_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/banners`;
 
 const getBannerImageUrl = (image) => {

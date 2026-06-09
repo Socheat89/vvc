@@ -8,7 +8,7 @@ import { getProductDisplayName, getProductSearchText } from '../../utils/product
 
 const DESKTOP_PER_PAGE = 6;
 const MOBILE_PER_PAGE = 12;
-const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
 const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
 
 const extractUploadPath = (value) => {
@@ -54,6 +54,8 @@ const getInitials = (name = '') => {
   return (words[0]?.[0] || 'V') + (words[1]?.[0] || 'V');
 };
 
+const normalizeBrandKey = (brand = '') => String(brand || '').trim().toLowerCase();
+
 const loadingCards = Array.from({ length: 6 }, (_, index) => index);
 const loadingCategories = Array.from({ length: 5 }, (_, index) => index);
 
@@ -66,6 +68,7 @@ export default function ProductList() {
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,7 +104,7 @@ export default function ProductList() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory, stockFilter, sortBy, searchTerm]);
+  }, [selectedBrand, selectedCategory, stockFilter, sortBy, searchTerm]);
 
   useEffect(() => {
     if (!isMobileCatalog) {
@@ -113,13 +116,25 @@ export default function ProductList() {
     const params = new URLSearchParams(location.search);
     const stock = params.get('stock');
     const category = params.get('category');
+    const brand = String(params.get('brand') || '').trim();
 
     if (stock === 'all' || stock === 'in' || stock === 'out') {
       setStockFilter(stock);
+    } else {
+      setStockFilter('all');
     }
 
-    if (category) {
+    if (brand) {
+      setSelectedBrand(brand);
+      setSelectedCategory('all');
+    } else {
+      setSelectedBrand('all');
+    }
+
+    if (category && !brand) {
       setSelectedCategory(category);
+    } else if (!brand) {
+      setSelectedCategory('all');
     }
 
     if (isMobileCatalog) {
@@ -185,6 +200,22 @@ export default function ProductList() {
     return Array.from(categoryMap.values());
   }, [categories, products, language, t]);
 
+  const brandOptions = useMemo(() => {
+    const brandMap = new Map();
+
+    products.forEach((product) => {
+      const brand = String(product.brand || '').trim();
+      if (!brand) return;
+
+      const key = normalizeBrandKey(brand);
+      const existing = brandMap.get(key) || { key, name: brand, count: 0 };
+      existing.count += 1;
+      brandMap.set(key, existing);
+    });
+
+    return Array.from(brandMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     const term = searchTerm.toLowerCase();
 
@@ -192,7 +223,9 @@ export default function ProductList() {
       .filter((product) => {
         const categoryId = String(product.category?.id || product.category_id || '');
         const categoryName = product.category?.name || '';
+        const brandName = String(product.brand || '').trim();
         const matchesCategory = selectedCategory === 'all' || categoryId === selectedCategory;
+        const matchesBrand = selectedBrand === 'all' || normalizeBrandKey(brandName) === normalizeBrandKey(selectedBrand);
         const matchesStock =
           stockFilter === 'all' ||
           (stockFilter === 'in' && Number(product.stock) > 0) ||
@@ -200,7 +233,7 @@ export default function ProductList() {
         const searchText = getProductSearchText(product, categoryName);
         const matchesSearch = !term || searchText.includes(term);
 
-        return matchesCategory && matchesStock && matchesSearch;
+        return matchesCategory && matchesBrand && matchesStock && matchesSearch;
       })
       .sort((a, b) => {
         if (sortBy === 'name') {
@@ -214,7 +247,7 @@ export default function ProductList() {
         }
         return Number(b.id || 0) - Number(a.id || 0);
       });
-  }, [products, searchTerm, selectedCategory, stockFilter, sortBy, language]);
+  }, [products, searchTerm, selectedBrand, selectedCategory, stockFilter, sortBy, language]);
 
   const searchSuggestions = useMemo(() => {
     const term = searchInput.trim().toLowerCase();
@@ -224,17 +257,19 @@ export default function ProductList() {
       .filter((product) => {
         const categoryId = String(product.category?.id || product.category_id || '');
         const categoryName = product.category?.name || '';
+        const brandName = String(product.brand || '').trim();
         const matchesCategory = selectedCategory === 'all' || categoryId === selectedCategory;
+        const matchesBrand = selectedBrand === 'all' || normalizeBrandKey(brandName) === normalizeBrandKey(selectedBrand);
         const matchesStock =
           stockFilter === 'all' ||
           (stockFilter === 'in' && Number(product.stock) > 0) ||
           (stockFilter === 'out' && Number(product.stock) <= 0);
         const searchText = getProductSearchText(product, categoryName);
 
-        return matchesCategory && matchesStock && searchText.includes(term);
+        return matchesCategory && matchesBrand && matchesStock && searchText.includes(term);
       })
       .slice(0, 5);
-  }, [products, searchInput, selectedCategory, stockFilter]);
+  }, [products, searchInput, selectedBrand, selectedCategory, stockFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / perPage));
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * perPage, currentPage * perPage);
@@ -242,6 +277,7 @@ export default function ProductList() {
     Boolean(searchInput.trim()) ||
     Boolean(searchTerm) ||
     selectedCategory !== 'all' ||
+    selectedBrand !== 'all' ||
     stockFilter !== 'all' ||
     sortBy !== 'newest';
 
@@ -253,6 +289,7 @@ export default function ProductList() {
     setSearchInput('');
     setSearchTerm('');
     setSelectedCategory('all');
+    setSelectedBrand('all');
     setStockFilter('all');
     setSortBy('newest');
   };
@@ -267,6 +304,7 @@ export default function ProductList() {
         className={`product-category-button ${selectedCategory === 'all' ? 'active' : ''}`}
         onClick={() => {
           setSelectedCategory('all');
+          setSelectedBrand('all');
           if (closeOnSelect) closeMobilePanel();
         }}
       >
@@ -280,6 +318,7 @@ export default function ProductList() {
           className={`product-category-button ${selectedCategory === category.id ? 'active' : ''}`}
           onClick={() => {
             setSelectedCategory(category.id);
+            setSelectedBrand('all');
             if (closeOnSelect) closeMobilePanel();
           }}
         >
@@ -287,6 +326,37 @@ export default function ProductList() {
           <strong>{category.count}</strong>
         </button>
       ))}
+      {brandOptions.length > 0 && (
+        <>
+          <div className="product-panel-title product-brand-panel-title">{t.brands[language]}</div>
+          <button
+            type="button"
+            className={`product-category-button ${selectedBrand === 'all' ? 'active' : ''}`}
+            onClick={() => {
+              setSelectedBrand('all');
+              if (closeOnSelect) closeMobilePanel();
+            }}
+          >
+            <span>{t.allBrands[language]}</span>
+            <strong>{products.length}</strong>
+          </button>
+          {brandOptions.map((brand) => (
+            <button
+              key={brand.key}
+              type="button"
+              className={`product-category-button ${normalizeBrandKey(selectedBrand) === brand.key ? 'active' : ''}`}
+              onClick={() => {
+                setSelectedBrand(brand.name);
+                setSelectedCategory('all');
+                if (closeOnSelect) closeMobilePanel();
+              }}
+            >
+              <span>{brand.name}</span>
+              <strong>{brand.count}</strong>
+            </button>
+          ))}
+        </>
+      )}
       <button
         type="button"
         className="product-reset-button"
@@ -355,7 +425,9 @@ export default function ProductList() {
                     </div>
                     <div>
                       <strong>{productName}</strong>
-                      <p>{product.category?.name || t.category[language]}</p>
+                      <p>
+                        {[product.brand, product.category?.name || t.category[language]].filter(Boolean).join(' / ')}
+                      </p>
                     </div>
                     <small>${Number(product.price || 0).toFixed(2)}</small>
                   </Link>
@@ -369,6 +441,21 @@ export default function ProductList() {
       )}
 
       <div className="product-filter-row">
+        <select
+          value={selectedBrand}
+          onChange={(event) => {
+            const nextBrand = event.target.value;
+            setSelectedBrand(nextBrand);
+            if (nextBrand !== 'all') {
+              setSelectedCategory('all');
+            }
+          }}
+        >
+          <option value="all">{t.allBrands[language]}</option>
+          {brandOptions.map((brand) => (
+            <option key={brand.key} value={brand.name}>{brand.name}</option>
+          ))}
+        </select>
         <select value={stockFilter} onChange={(event) => setStockFilter(event.target.value)}>
           <option value="all">{t.allStock[language]}</option>
           <option value="in">{t.inStockOnly[language]}</option>
@@ -435,6 +522,7 @@ export default function ProductList() {
                   <span className="loading-line loading-line-sm" />
                   <span className="loading-input" />
                   <div className="product-filter-row">
+                    <span className="loading-input" />
                     <span className="loading-input" />
                     <span className="loading-input" />
                     <span className="loading-button" />
@@ -569,7 +657,7 @@ export default function ProductList() {
                         </div>
                         <div className="product-card-body">
                           <div className="product-card-category">
-                            {product.category?.name || t.category[language]}
+                            {[product.brand, product.category?.name || t.category[language]].filter(Boolean).join(' / ')}
                           </div>
                           <h3>{productName}</h3>
                           <div className="product-card-footer">
@@ -621,9 +709,9 @@ export default function ProductList() {
         </button>
         <button
           type="button"
-          className={`product-mobile-tool ${activeMobilePanel === 'category' || selectedCategory !== 'all' ? 'active' : ''}`}
+          className={`product-mobile-tool ${activeMobilePanel === 'category' || selectedCategory !== 'all' || selectedBrand !== 'all' ? 'active' : ''}`}
           onClick={() => setActiveMobilePanel((current) => (current === 'category' ? null : 'category'))}
-          aria-label={t.categories[language]}
+          aria-label={t.catalogFilters[language]}
           aria-expanded={activeMobilePanel === 'category'}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -642,7 +730,7 @@ export default function ProductList() {
           />
           <section className="product-mobile-sheet" role="dialog" aria-modal="true">
             <div className="product-mobile-sheet-header">
-              <h2>{activeMobilePanel === 'search' ? t.searchLabel[language] : t.categories[language]}</h2>
+              <h2>{activeMobilePanel === 'search' ? t.searchLabel[language] : t.catalogFilters[language]}</h2>
               <button type="button" onClick={closeMobilePanel} aria-label={t.cancel?.[language] || 'Close'}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5Z" />

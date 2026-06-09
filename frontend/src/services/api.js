@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const PRODUCTION_API_URL = 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php/api';
+const PRODUCTION_API_URL = 'https://vvc.asia/backend/public/index.php/api';
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : PRODUCTION_API_URL);
 
 const api = axios.create({
@@ -183,6 +183,11 @@ export const systemService = {
   getStatus: () => api.get('/system/status'),
   runMigrations: () => api.post('/system/migrate'),
   clearCache: () => api.post('/system/cache-clear'),
+};
+
+export const settingsService = {
+  get: () => api.get('/settings'),
+  update: (data) => api.post('/settings', data),
 };
 
 export default api;

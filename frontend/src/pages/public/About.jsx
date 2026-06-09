@@ -1,12 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import translations from '../../translations';
 import logo from '../../assets/logo.png';
 
 export default function About() {
   const { language } = useLanguage();
+  const { displayName, logoUrl } = useSiteSettings();
   const t = translations.aboutPage;
+  const brandLogo = logoUrl || logo;
+  const brandName = displayName || 'Van Van Cambodia';
 
   const chips = ['chipStory', 'chipQuality', 'chipCare', 'chipTrust'];
   const values = [
@@ -39,7 +43,7 @@ export default function About() {
           <div className="about-identity-board">
             <div className="about-brand-core">
               <div className="about-logo-frame">
-                <img src={logo} alt="Van Van Cambodia" />
+                <img src={brandLogo} alt={brandName} />
               </div>
               <div>
                 <span>{t.brandNote[language]}</span>

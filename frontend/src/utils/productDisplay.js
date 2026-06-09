@@ -13,6 +13,7 @@ export const getProductSearchText = (product, categoryName = '') => [
   product?.name,
   product?.local_name,
   product?.description,
+  product?.brand,
   categoryName,
 ]
   .filter(Boolean)

@@ -16,6 +16,7 @@ class Product extends Model
         'description',
         'item_type',
         'item_group',
+        'brand',
         'base_unit',
         'alarm_qty',
         'price',

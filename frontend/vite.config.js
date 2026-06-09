@@ -13,12 +13,12 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php',
+        target: 'https://vvc.asia/backend/public/index.php',
         changeOrigin: true,
         secure: false,
       },
       '/vvc-upload-proxy': {
-        target: 'https://app.vvc.asia/vvc_web/vvc/backend/public',
+        target: 'https://vvc.asia/backend/public',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/vvc-upload-proxy/, ''),

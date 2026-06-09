@@ -7,7 +7,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const publicDir = path.join(projectRoot, 'public');
 
 const DEFAULT_SITE_URL = 'https://app.vvc.asia';
-const DEFAULT_API_URL = 'https://app.vvc.asia/vvc_web/vvc/backend/public/index.php/api';
+const DEFAULT_API_URL = 'https://vvc.asia/backend/public/index.php/api';
 
 const normalizeBaseUrl = (value) => String(value || '').trim().replace(/\/+$/, '');
 const siteUrl = normalizeBaseUrl(process.env.VITE_SITE_URL || process.env.SITE_URL || DEFAULT_SITE_URL);

@@ -14,12 +14,13 @@ const emptyForm = {
   image: '',
   imageFile: null,
   category_id: '',
+  brand: '',
 };
 
 const ITEMS_PER_PAGE = 10;
 const stockFilters = ['all', 'inStock', 'lowStock', 'outOfStock'];
 const sortOptions = ['newest', 'nameAsc', 'priceAsc', 'priceDesc', 'stockAsc', 'stockDesc'];
-const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
 const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
 
 const extractUploadPath = (value) => {
@@ -90,6 +91,7 @@ async function buildProductPayload(data, backgroundRemoveFailedMessage) {
   const payload = {
     name: data.name.trim(),
     description: data.description.trim(),
+    brand: String(data.brand || '').trim() || null,
     price: Number(data.price),
     stock: Number.parseInt(data.stock, 10),
     category_id: data.category_id ? Number(data.category_id) : null,
@@ -153,6 +155,7 @@ export default function ManageProducts() {
   const [formData, setFormData] = useState(emptyForm);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [brandFilter, setBrandFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
@@ -183,7 +186,7 @@ export default function ManageProducts() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [categoryFilter, searchTerm, sortBy, stockFilter]);
+  }, [brandFilter, categoryFilter, searchTerm, sortBy, stockFilter]);
 
   useEffect(() => {
     return () => {
@@ -228,23 +231,43 @@ export default function ManageProducts() {
     return { totalProducts, totalStock, lowStock, outOfStock, inventoryValue };
   }, [products]);
 
+  const brandOptions = useMemo(() => {
+    const brandMap = new Map();
+
+    products.forEach((product) => {
+      const brand = String(product.brand || '').trim();
+      if (!brand) return;
+
+      const key = brand.toLowerCase();
+      const existing = brandMap.get(key) || { key, name: brand, count: 0 };
+      existing.count += 1;
+      brandMap.set(key, existing);
+    });
+
+    return Array.from(brandMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
     return products
       .filter((product) => {
         const categoryName = product.category?.name || '';
+        const brandName = String(product.brand || '').trim();
         const matchesSearch =
           !term ||
           product.name.toLowerCase().includes(term) ||
           (product.item_code || '').toLowerCase().includes(term) ||
           (product.local_name || '').toLowerCase().includes(term) ||
+          brandName.toLowerCase().includes(term) ||
           (product.description || '').toLowerCase().includes(term) ||
           categoryName.toLowerCase().includes(term);
 
         const stock = Number(product.stock || 0);
         const matchesCategory =
           categoryFilter === 'all' || String(product.category_id || '') === categoryFilter;
+        const matchesBrand =
+          brandFilter === 'all' || brandName.toLowerCase() === brandFilter;
 
         const matchesStock =
           stockFilter === 'all' ||
@@ -252,7 +275,7 @@ export default function ManageProducts() {
           (stockFilter === 'lowStock' && stock > 0 && stock < 10) ||
           (stockFilter === 'outOfStock' && stock === 0);
 
-        return matchesSearch && matchesCategory && matchesStock;
+        return matchesSearch && matchesCategory && matchesBrand && matchesStock;
       })
       .sort((a, b) => {
         if (sortBy === 'nameAsc') return getProductDisplayName(a, language).localeCompare(getProductDisplayName(b, language));
@@ -262,7 +285,7 @@ export default function ManageProducts() {
         if (sortBy === 'stockDesc') return Number(b.stock || 0) - Number(a.stock || 0);
         return Number(b.id) - Number(a.id);
       });
-  }, [categoryFilter, products, searchTerm, sortBy, stockFilter, language]);
+  }, [brandFilter, categoryFilter, products, searchTerm, sortBy, stockFilter, language]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const currentPageSafe = Math.min(currentPage, totalPages);
@@ -329,6 +352,7 @@ export default function ManageProducts() {
       image: product.image || '',
       imageFile: null,
       category_id: product.category_id || '',
+      brand: product.brand || '',
     });
     setImagePreview(getProductImageUrl(product.image) || null);
     setFormError(null);
@@ -382,6 +406,7 @@ export default function ManageProducts() {
     if (!confirmed) return;
 
     let failed = 0;
+    let firstFailureReason = '';
 
     try {
       setBackgroundRemoving(true);
@@ -406,6 +431,9 @@ export default function ManageProducts() {
           await productService.update(product.id, payload);
         } catch (error) {
           failed += 1;
+          if (!firstFailureReason) {
+            firstFailureReason = error?.message || String(error);
+          }
           console.error(error);
         } finally {
           setBackgroundRemovalProgress({
@@ -420,7 +448,7 @@ export default function ManageProducts() {
 
       setBackgroundRemovalMessage(
         failed
-          ? `${t.removeBackgroundFailed[language]} (${productsWithImages.length - failed}/${productsWithImages.length})`
+          ? `${t.removeBackgroundFailed[language]} (${productsWithImages.length - failed}/${productsWithImages.length})${firstFailureReason ? `: ${firstFailureReason}` : ''}`
           : `${t.removeBackgroundSuccess[language]} (${productsWithImages.length})`
       );
     } finally {
@@ -510,6 +538,7 @@ export default function ManageProducts() {
   const clearFilters = () => {
     setSearchTerm('');
     setCategoryFilter('all');
+    setBrandFilter('all');
     setStockFilter('all');
     setSortBy('newest');
   };
@@ -682,7 +711,7 @@ export default function ManageProducts() {
 
       {/* Control Bar (Filters & Search) */}
       <div className="glass-card rounded-2xl p-4 bg-white/80 border border-slate-100/60 shadow-sm reveal reveal-delay-1">
-        <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
+        <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_auto]">
           <div className="relative">
             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -710,6 +739,17 @@ export default function ManageProducts() {
             ))}
           </select>
           
+          <select
+            value={brandFilter}
+            onChange={(e) => setBrandFilter(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--ember)]"
+            aria-label={t.brand[language]}
+          >
+            <option value="all">{t.allBrands[language]}</option>
+            {brandOptions.map((brand) => (
+              <option key={brand.key} value={brand.key}>{brand.name}</option>
+            ))}
+          </select>
           <select
             value={stockFilter}
             onChange={(e) => setStockFilter(e.target.value)}
@@ -761,15 +801,16 @@ export default function ManageProducts() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-sm text-left">
-            <thead className="border-b border-slate-100 bg-slate-50/50">
+          <table className="w-full min-w-[1040px] text-sm">
+            <thead className="border-b border-white/70 bg-white/70">
               <tr>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.product[language]}</th>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.category[language]}</th>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.price[language]}</th>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.stock[language]}</th>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px]">{t.status[language]}</th>
-                <th className="px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-[10px] text-right">{t.actions[language]}</th>
+                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.product[language]}</th>
+                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.category[language]}</th>
+                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.brand[language]}</th>
+                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.price[language]}</th>
+                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.stock[language]}</th>
+                <th className="px-5 py-4 text-left font-semibold text-slate-600">{t.status[language]}</th>
+                <th className="px-5 py-4 text-right font-semibold text-slate-600">{t.actions[language]}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -811,8 +852,9 @@ export default function ManageProducts() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 text-xs font-semibold">{product.category?.name || '-'}</td>
-                    <td className="px-6 py-4 font-bold text-slate-800 text-sm">
+                    <td className="px-5 py-4 text-slate-600">{product.category?.name || '-'}</td>
+                    <td className="px-5 py-4 text-slate-600">{product.brand || '-'}</td>
+                    <td className="px-5 py-4 font-semibold text-slate-800">
                       ${Number(product.price || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
@@ -945,7 +987,7 @@ export default function ManageProducts() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">{t.name[language]} *</label>
                   <input
@@ -954,6 +996,16 @@ export default function ManageProducts() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)]"
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">{t.brand[language]}</label>
+                  <input
+                    type="text"
+                    value={formData.brand}
+                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold-soft)]"
+                    placeholder={t.brandPlaceholder[language]}
                   />
                 </div>
                 <div className="space-y-2">

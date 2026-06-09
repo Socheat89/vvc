@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useSiteSettings } from '../context/SiteSettingsContext';
 import translations from '../translations';
 
 // Loading Component (Premium Concentric Spinner)
@@ -22,6 +23,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('admin_user') || '{}');
   const { language, toggleLanguage } = useLanguage();
+  const { displayName, logoUrl } = useSiteSettings();
   const t = translations.adminLayout;
   const tc = translations.common;
 
@@ -155,12 +157,16 @@ export default function AdminLayout() {
         {/* Sidebar Header */}
         <div className="flex h-16 items-center justify-between px-6 border-b border-slate-900 bg-slate-950/40">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 border border-white/10 text-[var(--gold)] font-bold shadow-md flex-shrink-0">
-              V
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-white/10 border border-white/10 text-[var(--gold)] font-bold shadow-md flex-shrink-0">
+              {logoUrl ? (
+                <img src={logoUrl} alt={displayName} className="h-8 w-8 object-contain" />
+              ) : (
+                'V'
+              )}
             </div>
             {!isCollapsed && (
               <div className="animate-fade-in-up duration-150">
-                <h1 className="text-sm font-semibold tracking-tight text-white">{t.title[language] || 'VVC Admin'}</h1>
+                <h1 className="text-sm font-semibold tracking-tight text-white">{displayName || t.title[language] || 'VVC Admin'}</h1>
                 <p className="text-[9px] uppercase tracking-widest text-[var(--gold)] font-bold">{t.panelLabel[language]}</p>
               </div>
             )}
@@ -313,7 +319,27 @@ export default function AdminLayout() {
                   {!isCollapsed && <span className="truncate">{t.translations[language]}</span>}
                 </NavLink>
 
-                <NavLink 
+                <NavLink
+                  to="/admin/settings"
+                  className={({ isActive }) =>
+                    `flex items-center rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                      isCollapsed ? 'justify-center px-0' : 'px-4 gap-3'
+                    } ${
+                      isActive
+                        ? 'bg-[var(--gold)] text-white shadow-md shadow-[var(--gold)]/20'
+                        : 'text-slate-400 hover:bg-slate-900/60 hover:text-white hover:translate-x-0.5'
+                    }`
+                  }
+                  title={isCollapsed ? t.settings[language] : ""}
+                  onClick={() => setIsSidebarOpen(false)}
+                >
+                  <svg className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 16v-2m8-6h-2M6 12H4m12.95-4.95-1.414 1.414M8.464 15.536 7.05 16.95m9.9 0-1.414-1.414M8.464 8.464 7.05 7.05M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {!isCollapsed && <span className="truncate">{t.settings[language]}</span>}
+                </NavLink>
+
+                <NavLink
                   to="/admin/system" 
                   className={({ isActive }) =>
                     `flex items-center rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${

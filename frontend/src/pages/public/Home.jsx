@@ -10,7 +10,7 @@ import { getProductDisplayName } from '../../utils/productDisplay';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
-const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
 const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
 const BANNER_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/banners`;
 const CATEGORY_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/categories`;
@@ -110,7 +110,7 @@ const getInitials = (name = '') => {
 const FEATURED_PRODUCTS_VISIBLE_COUNT = 4;
 const FEATURED_PRODUCTS_ROTATION_MS = 5000;
 const IMPORTED_CATEGORY_DESCRIPTION = 'Imported from product Excel file';
-const featuredLoadingCards = Array.from({ length: FEATURED_PRODUCTS_VISIBLE_COUNT }, (_, index) => index);
+const featuredLoadingCards = Array.from({ length: FEATURED_PRODUCTS_VISIBLE_COUNT }, (_,  index) => index);
 const productShowLoadingCards = Array.from({ length: 4 }, (_, index) => index);
 
 const productShowText = {
@@ -386,6 +386,7 @@ export default function Home() {
             className="home-poster-swiper"
             modules={[Autoplay, Pagination]}
             slidesPerView={1}
+            autoHeight
             loop={posterSlides.length > 1}
             speed={850}
             grabCursor
@@ -403,7 +404,7 @@ export default function Home() {
 
               return (
                 <SwiperSlide key={slide.id}>
-                  <article className={`home-poster-slide home-poster-slide-${slide.tone}`}>
+                  <article className={`home-poster-slide home-poster-slide-${slide.tone} ${hasSlideImage ? 'home-poster-slide-has-image' : ''}`}>
                     <div className="home-poster-content">
                       <div className="home-poster-art" aria-hidden="true">
                         <div className={`home-poster-banner ${hasSlideImage ? '' : 'home-poster-banner-empty'}`}>
@@ -415,6 +416,9 @@ export default function Home() {
                               fetchPriority={isFirstSlide ? 'high' : 'auto'}
                               decoding="async"
                               sizes="100vw"
+                              onLoad={(event) => {
+                                event.currentTarget.closest('.swiper')?.swiper?.updateAutoHeight?.(0);
+                              }}
                               onError={() => setImageErrors((current) => ({
                                 ...current,
                                 [`banner-${slide.id}`]: true,

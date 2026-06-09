@@ -9,7 +9,7 @@ const emptyForm = {
   showcase_image_file: null,
 };
 
-const PUBLIC_ASSET_BASE = 'https://app.vvc.asia/vvc_web/vvc/backend/public';
+const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
 const CATEGORY_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/categories`;
 const ITEMS_PER_PAGE = 10;
 const sortOptions = ['newest', 'nameAsc', 'nameDesc'];

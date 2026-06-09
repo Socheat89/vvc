@@ -6,6 +6,7 @@ export default function BackgroundRemovedImage({
   alt,
   onError,
   className = '',
+  autoRemove = false,
   ...imageProps
 }) {
   const [displaySrc, setDisplaySrc] = useState(src || '');
@@ -16,7 +17,7 @@ export default function BackgroundRemovedImage({
 
     setDisplaySrc(originalSrc);
 
-    if (!originalSrc) {
+    if (!originalSrc || !autoRemove) {
       return () => {
         isCurrent = false;
       };
@@ -37,7 +38,7 @@ export default function BackgroundRemovedImage({
     return () => {
       isCurrent = false;
     };
-  }, [src]);
+  }, [autoRemove, src]);
 
   const handleError = (event) => {
     if (displaySrc && displaySrc !== src) {

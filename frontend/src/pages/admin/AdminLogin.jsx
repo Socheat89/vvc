@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import translations from '../../translations';
 import logo from '../../assets/logo.png';
 
@@ -13,8 +14,11 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { language, toggleLanguage } = useLanguage();
+  const { displayName, logoUrl } = useSiteSettings();
   const t = translations.adminLogin;
   const tc = translations.common;
+  const brandLogo = logoUrl || logo;
+  const brandName = displayName || 'Van Van Cambodia';
 
   const [authorized, setAuthorized] = useState(false);
 
@@ -161,7 +165,7 @@ export default function AdminLogin() {
           <div className="text-center lg:text-left mb-8 space-y-3">
             {/* Logo for mobile only */}
             <div className="lg:hidden mx-auto h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white p-2.5 shadow-sm flex mb-4">
-              <img src={logo} alt="Van Van Cambodia" className="h-12 w-12 object-contain" />
+              <img src={brandLogo} alt={brandName} className="h-12 w-12 object-contain" />
             </div>
 
             <span className="inline-block px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gold-deep)] bg-[var(--gold-soft)] rounded-full">
