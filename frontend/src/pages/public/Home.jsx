@@ -12,8 +12,8 @@ import 'swiper/css/pagination';
 
 const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
 const PRODUCT_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/products`;
-const BANNER_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/banners`;
 const CATEGORY_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/categories`;
+const VIDEO_MEDIA_EXTENSIONS = new Set(['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v']);
 const BANNER_CACHE_KEY = 'vvc_home_banners_cache';
 
 const extractUploadPath = (value) => {
@@ -55,8 +55,25 @@ const getUploadImageUrl = (image, fallbackBase = PRODUCT_UPLOAD_BASE) => {
 };
 
 const getImageUrl = (image) => getUploadImageUrl(image, PRODUCT_UPLOAD_BASE);
-const getBannerImageUrl = (image) => getUploadImageUrl(image, BANNER_UPLOAD_BASE);
+const getBannerMediaUrl = (media) => getUploadImageUrl(media, `${PUBLIC_ASSET_BASE}/uploads/banners`);
 const getCategoryImageUrl = (image) => getUploadImageUrl(image, CATEGORY_UPLOAD_BASE);
+
+const getMediaTypeFromUrl = (media) => {
+  if (!media) return 'image';
+
+  const rawMedia = String(media).trim().replace(/\\/g, '/');
+  if (/^data:video\//i.test(rawMedia)) return 'video';
+  if (/^data:image\//i.test(rawMedia)) return 'image';
+
+  const mediaPath = rawMedia.split(/[?#]/)[0];
+  const extension = mediaPath.includes('.')
+    ? mediaPath.split('.').pop().toLowerCase()
+    : '';
+
+  return VIDEO_MEDIA_EXTENSIONS.has(extension) ? 'video' : 'image';
+};
+
+const isVideoMediaUrl = (media) => getMediaTypeFromUrl(media) === 'video';
 
 const readCachedBanners = () => {
   if (typeof window === 'undefined') return [];
@@ -98,7 +115,10 @@ const preloadImage = (imageUrl) => {
 const preloadFirstBanner = (banners) => {
   const firstBanner = banners.find((banner) => banner?.image);
   if (firstBanner) {
-    preloadImage(getBannerImageUrl(firstBanner.image));
+    const bannerMediaUrl = getBannerMediaUrl(firstBanner.image);
+    if (!isVideoMediaUrl(bannerMediaUrl)) {
+      preloadImage(bannerMediaUrl);
+    }
   }
 };
 
@@ -235,12 +255,17 @@ export default function Home() {
   const posterSlides = useMemo(() => {
     // If banners are loaded, use them; otherwise use default structure
     if (banners.length > 0) {
-      return banners.map((banner) => ({
-        id: banner.id.toString(),
-        tone: banner.tone || 'gold',
-        image: getBannerImageUrl(banner.image),
-        title: banner.title || '',
-      }));
+      return banners.map((banner) => {
+        const bannerMediaUrl = getBannerMediaUrl(banner.image);
+
+        return {
+          id: banner.id.toString(),
+          tone: banner.tone || 'gold',
+          image: bannerMediaUrl,
+          mediaType: getMediaTypeFromUrl(bannerMediaUrl),
+          title: banner.title || '',
+        };
+      });
     }
 
     // Default slides when no banners are loaded
@@ -249,16 +274,19 @@ export default function Home() {
         id: 'intro',
         tone: 'gold',
         image: '',
+        mediaType: 'image',
       },
       {
         id: 'meaning',
         tone: 'paper',
         image: '',
+        mediaType: 'image',
       },
       {
         id: 'featured',
         tone: 'ink',
         image: '',
+        mediaType: 'image',
       },
     ];
   }, [banners]);
@@ -269,7 +297,7 @@ export default function Home() {
     const fetchData = async () => {
       try {
         // Fetch banners
-        const bannersResponse = await bannerService.getAll();
+        const bannersResponse = await bannerService.getForPlacement('home');
         const nextBanners = bannersResponse.data.data || [];
         if (isMounted) {
           preloadFirstBanner(nextBanners);
@@ -339,7 +367,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    preloadImage(posterSlides.find((slide) => slide.image)?.image);
+    const firstImageSlide = posterSlides.find((slide) => slide.image && slide.mediaType !== 'video');
+    preloadImage(firstImageSlide?.image);
   }, [posterSlides]);
 
   useEffect(() => {
@@ -400,6 +429,7 @@ export default function Home() {
           >
             {posterSlides.map((slide, index) => {
               const hasSlideImage = slide.image && !imageErrors[`banner-${slide.id}`];
+              const isVideoSlide = slide.mediaType === 'video' || isVideoMediaUrl(slide.image);
               const isFirstSlide = index === 0;
 
               return (
@@ -408,7 +438,25 @@ export default function Home() {
                     <div className="home-poster-content">
                       <div className="home-poster-art" aria-hidden="true">
                         <div className={`home-poster-banner ${hasSlideImage ? '' : 'home-poster-banner-empty'}`}>
-                          {hasSlideImage && (
+                          {hasSlideImage && isVideoSlide && (
+                            <video
+                              src={slide.image}
+                              aria-label={slide.title || 'Banner video'}
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              preload={isFirstSlide ? 'auto' : 'metadata'}
+                              onLoadedMetadata={(event) => {
+                                event.currentTarget.closest('.swiper')?.swiper?.updateAutoHeight?.(0);
+                              }}
+                              onError={() => setImageErrors((current) => ({
+                                ...current,
+                                [`banner-${slide.id}`]: true,
+                              }))}
+                            />
+                          )}
+                          {hasSlideImage && !isVideoSlide && (
                             <img
                               src={slide.image}
                               alt=""

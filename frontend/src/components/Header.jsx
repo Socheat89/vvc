@@ -52,8 +52,8 @@ export default function Header() {
       <header className={`public-header sticky top-0 z-40 border-b border-[var(--stroke)] bg-white/85 backdrop-blur ${language === 'kh' ? 'public-header-kh' : ''}`}>
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <Link to="/" className="flex items-center gap-3">
-          <span className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-white/80 bg-white p-1 shadow-sm">
-            <img src={brandLogo} alt={brandName} className="h-10 w-10 object-contain" />
+          <span className="flex h-[68px] w-[68px] items-center justify-center rounded-2xl border border-white/80 bg-white p-1 shadow-sm">
+            <img src={brandLogo} alt={brandName} className="h-14 w-14 object-contain" />
           </span>
           <div className="leading-tight">
             <div className="text-lg font-semibold text-[var(--coal)]">{brandName}</div>

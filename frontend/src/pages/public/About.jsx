@@ -1,64 +1,142 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSiteSettings } from '../../context/SiteSettingsContext';
 import translations from '../../translations';
-import logo from '../../assets/logo.png';
+import { bannerService } from '../../services/api';
+
+const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
+const VIDEO_MEDIA_EXTENSIONS = new Set(['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v']);
+
+const extractUploadPath = (value) => {
+  const normalizedValue = String(value || '').trim().replace(/\\/g, '/');
+  const uploadIndex = normalizedValue.toLowerCase().indexOf('uploads/');
+
+  if (uploadIndex < 0) return '';
+
+  return normalizedValue.slice(uploadIndex).replace(/^\/+/, '');
+};
+
+const getBannerMediaUrl = (media) => {
+  if (!media) return '';
+  const rawMedia = String(media).trim().replace(/\\/g, '/');
+  if (!rawMedia) return '';
+  if (/^(data:|blob:)/i.test(rawMedia)) return rawMedia;
+
+  const uploadPath = extractUploadPath(rawMedia);
+  if (uploadPath) return `${PUBLIC_ASSET_BASE}/${uploadPath}`;
+
+  if (/^https?:\/\//i.test(rawMedia)) return rawMedia;
+
+  const mediaPath = rawMedia
+    .replace(/^\/+/, '')
+    .replace(/^public\//i, '')
+    .replace(/^backend\/public\//i, '')
+    .replace(/^uploads\//i, '');
+
+  return `${PUBLIC_ASSET_BASE}/uploads/banners/${mediaPath}`;
+};
+
+const getMediaTypeFromUrl = (media) => {
+  if (!media) return 'image';
+
+  const rawMedia = String(media).trim().replace(/\\/g, '/');
+  if (/^data:video\//i.test(rawMedia)) return 'video';
+  if (/^data:image\//i.test(rawMedia)) return 'image';
+
+  const mediaPath = rawMedia.split(/[?#]/)[0];
+  const extension = mediaPath.includes('.')
+    ? mediaPath.split('.').pop().toLowerCase()
+    : '';
+
+  return VIDEO_MEDIA_EXTENSIONS.has(extension) ? 'video' : 'image';
+};
 
 export default function About() {
   const { language } = useLanguage();
-  const { displayName, logoUrl } = useSiteSettings();
+  const { displayName } = useSiteSettings();
   const t = translations.aboutPage;
-  const brandLogo = logoUrl || logo;
-  const brandName = displayName || 'Van Van Cambodia';
+  const brandName = displayName || t.title[language] || 'Van Van Cambodia';
+  const [heroBanner, setHeroBanner] = useState('');
+  const [bannerLoadFailed, setBannerLoadFailed] = useState(false);
 
-  const chips = ['chipStory', 'chipQuality', 'chipCare', 'chipTrust'];
   const values = [
     { titleKey: 'value1Title', descKey: 'value1Desc' },
     { titleKey: 'value2Title', descKey: 'value2Desc' },
     { titleKey: 'value3Title', descKey: 'value3Desc' },
   ];
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchHeroBanner = async () => {
+      try {
+        const response = await bannerService.getForPlacement('about');
+        const banners = response.data.data || [];
+        const firstBanner = banners.find((banner) => banner?.image && banner.active !== false);
+
+        if (isMounted && firstBanner) {
+          setHeroBanner(getBannerMediaUrl(firstBanner.image));
+          setBannerLoadFailed(false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch about banner:', error);
+      }
+    };
+
+    fetchHeroBanner();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const showHeroBanner = heroBanner && !bannerLoadFailed;
+  const heroBannerType = getMediaTypeFromUrl(heroBanner);
+
   return (
     <div className="about-page">
-      <section className="about-hero mx-auto max-w-6xl px-4">
-        <div className="about-hero-copy reveal">
-          <span className="pill">{t.tagline[language]}</span>
-          <h1>
-            {t.title[language]}
-            <span>{t.titleSpan[language]}</span>
-          </h1>
-          <p>{t.heroDesc[language]}</p>
-          <div className="about-hero-actions">
-            <Link to="/products" className="btn-primary">
-              {t.primaryCta[language]}
-            </Link>
-            <a href="#about-values" className="btn-secondary">
-              {t.secondaryCta[language]}
-            </a>
-          </div>
-        </div>
+      <section className={`about-hero ${showHeroBanner ? 'about-hero-has-image' : ''}`}>
+        {showHeroBanner && heroBannerType === 'video' && (
+          <video
+            src={heroBanner}
+            className="about-hero-image"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            onError={() => setBannerLoadFailed(true)}
+          />
+        )}
+        {showHeroBanner && heroBannerType !== 'video' && (
+          <img
+            src={heroBanner}
+            alt=""
+            className="about-hero-image"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            onError={() => setBannerLoadFailed(true)}
+          />
+        )}
+        <div className="about-hero-shade" aria-hidden="true" />
 
-        <div className="about-identity reveal reveal-delay-1" aria-label={t.brandNote[language]}>
-          <div className="about-identity-board">
-            <div className="about-brand-core">
-              <div className="about-logo-frame">
-                <img src={brandLogo} alt={brandName} />
-              </div>
-              <div>
-                <span>{t.brandNote[language]}</span>
-                <strong>{t.identityTitle[language]}</strong>
-                <p>{t.identityDesc[language]}</p>
-              </div>
-            </div>
-
-            <div className="about-chip-grid">
-              {chips.map((chip, index) => (
-                <div key={chip} className={`about-chip about-chip-${index + 1}`}>
-                  <span />
-                  {t[chip][language]}
-                </div>
-              ))}
+        <div className="about-hero-content mx-auto max-w-6xl px-4">
+          <div className="about-hero-copy reveal">
+            <span className="pill">{t.tagline[language]}</span>
+            <h1>
+              {brandName}
+              <span>{t.titleSpan[language]}</span>
+            </h1>
+            <p>{t.heroDesc[language]}</p>
+            <div className="about-hero-actions">
+              <Link to="/products" className="btn-primary">
+                {t.primaryCta[language]}
+              </Link>
+              <a href="#about-values" className="btn-secondary">
+                {t.secondaryCta[language]}
+              </a>
             </div>
           </div>
         </div>

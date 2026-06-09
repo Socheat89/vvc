@@ -12,13 +12,24 @@ use Illuminate\Validation\ValidationException;
 
 class BannerController extends Controller
 {
+    private const BANNER_MEDIA_MIMES = 'jpg,jpeg,png,webp,gif,bmp,avif,mp4,webm,ogg,ogv,mov,m4v';
+
     // GET /api/banners - Public
-    public function index()
+    public function index(Request $request)
     {
-        $banners = \Illuminate\Support\Facades\Cache::remember('banners_all', 300, function () {
-            return Banner::where('active', true)
-                ->orderBy('position')
-                ->get();
+        $placement = $request->query('placement');
+        $placement = in_array($placement, ['home', 'about'], true) ? $placement : 'all';
+
+        $banners = \Illuminate\Support\Facades\Cache::remember("banners_public_{$placement}", 300, function () use ($placement) {
+            $query = Banner::where('active', true);
+
+            if ($placement === 'home') {
+                $query->where('show_on_home', true);
+            } elseif ($placement === 'about') {
+                $query->where('show_on_about', true);
+            }
+
+            return $query->orderBy('position')->get();
         });
 
         return response()->json([
@@ -47,7 +58,9 @@ class BannerController extends Controller
                 'tone' => 'required|in:gold,paper,ink',
                 'position' => 'nullable|integer|min:0',
                 'active' => 'nullable|boolean',
-                'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
+                'show_on_home' => 'nullable|boolean',
+                'show_on_about' => 'nullable|boolean',
+                'image_file' => 'nullable|file|mimes:' . self::BANNER_MEDIA_MIMES . '|max:81920',
             ]);
 
             unset($validated['image_file']);
@@ -60,13 +73,21 @@ class BannerController extends Controller
                 $validated['active'] = true;
             }
 
+            if (!isset($validated['show_on_home'])) {
+                $validated['show_on_home'] = true;
+            }
+
+            if (!isset($validated['show_on_about'])) {
+                $validated['show_on_about'] = false;
+            }
+
             if ($request->hasFile('image_file')) {
-                $validated['image'] = $this->storeBannerImage($request->file('image_file'));
+                $validated['image'] = $this->storeBannerMedia($request->file('image_file'));
             }
 
             $banner = Banner::create($validated);
 
-            \Illuminate\Support\Facades\Cache::forget('banners_all');
+            $this->clearBannerCache();
 
             return response()->json(['data' => $banner], Response::HTTP_CREATED);
         } catch (ValidationException $error) {
@@ -91,20 +112,22 @@ class BannerController extends Controller
                 'tone' => 'sometimes|in:gold,paper,ink',
                 'position' => 'nullable|integer|min:0',
                 'active' => 'nullable|boolean',
-                'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:20480',
+                'show_on_home' => 'nullable|boolean',
+                'show_on_about' => 'nullable|boolean',
+                'image_file' => 'nullable|file|mimes:' . self::BANNER_MEDIA_MIMES . '|max:81920',
             ]);
 
             unset($validated['image_file']);
 
             if ($request->hasFile('image_file')) {
-                $validated['image'] = $this->storeBannerImage($request->file('image_file'));
+                $validated['image'] = $this->storeBannerMedia($request->file('image_file'));
 
                 $this->deleteLocalBannerImage($banner->image);
             }
 
             $banner->update($validated);
 
-            \Illuminate\Support\Facades\Cache::forget('banners_all');
+            $this->clearBannerCache();
 
             return response()->json(['data' => $banner]);
         } catch (ValidationException $error) {
@@ -126,7 +149,7 @@ class BannerController extends Controller
         $this->deleteLocalBannerImage($banner->image);
         $banner->delete();
 
-        \Illuminate\Support\Facades\Cache::forget('banners_all');
+        $this->clearBannerCache();
 
         return response()->json(['message' => 'Banner deleted successfully']);
     }
@@ -141,20 +164,20 @@ class BannerController extends Controller
         ]);
     }
 
-    private function storeBannerImage(UploadedFile $file): string
+    private function storeBannerMedia(UploadedFile $file): string
     {
         if (!$file->isValid()) {
-            throw new \RuntimeException('Banner image upload failed: ' . $file->getErrorMessage());
+            throw new \RuntimeException('Banner media upload failed: ' . $file->getErrorMessage());
         }
 
         if ((int) $file->getSize() <= 0) {
-            throw new \RuntimeException('Banner image upload is empty.');
+            throw new \RuntimeException('Banner media upload is empty.');
         }
 
         $directory = $this->ensureBannerUploadDirectory();
         $filename = 'banner-' . Str::uuid();
 
-        if ($this->shouldConvertBannerToWebp()) {
+        if (!$this->isVideoUpload($file) && !$this->isAnimationUpload($file) && $this->shouldConvertBannerToWebp()) {
             $sourcePath = $file->getRealPath();
             $webpPath = $directory . DIRECTORY_SEPARATOR . $filename . '.webp';
 
@@ -166,25 +189,33 @@ class BannerController extends Controller
             @unlink($webpPath);
         }
 
-        return $this->storeOriginalBannerImage($file, $directory, $filename);
+        return $this->storeOriginalBannerMedia($file, $directory, $filename);
     }
 
-    private function storeOriginalBannerImage(UploadedFile $file, string $directory, string $filename): string
+    private function clearBannerCache(): void
+    {
+        \Illuminate\Support\Facades\Cache::forget('banners_all');
+        \Illuminate\Support\Facades\Cache::forget('banners_public_all');
+        \Illuminate\Support\Facades\Cache::forget('banners_public_home');
+        \Illuminate\Support\Facades\Cache::forget('banners_public_about');
+    }
+
+    private function storeOriginalBannerMedia(UploadedFile $file, string $directory, string $filename): string
     {
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
         $extension = preg_replace('/[^a-z0-9]/', '', $extension) ?: 'jpg';
-        $imageName = $filename . '.' . $extension;
-        $file->move($directory, $imageName);
+        $mediaName = $filename . '.' . $extension;
+        $file->move($directory, $mediaName);
 
-        $imagePath = $directory . DIRECTORY_SEPARATOR . $imageName;
-        @chmod($imagePath, 0644);
+        $mediaPath = $directory . DIRECTORY_SEPARATOR . $mediaName;
+        @chmod($mediaPath, 0644);
 
-        if (!$this->isUsableImageFile($imagePath)) {
-            @unlink($imagePath);
-            throw new \RuntimeException('Unable to save banner image file.');
+        if (!$this->isUsableBannerMediaFile($mediaPath)) {
+            @unlink($mediaPath);
+            throw new \RuntimeException('Unable to save banner media file.');
         }
 
-        return $this->publicBannerImageUrl($imagePath);
+        return $this->publicBannerImageUrl($mediaPath);
     }
 
     private function convertImagePathToWebp(string $source, string $destination): bool
@@ -241,7 +272,7 @@ class BannerController extends Controller
         $saved = @imagewebp($image, $destination, 82);
         imagedestroy($image);
 
-        if (!$saved || !$this->isUsableImageFile($destination)) {
+        if (!$saved || !$this->isUsableBannerMediaFile($destination)) {
             @unlink($destination);
             return false;
         }
@@ -259,7 +290,7 @@ class BannerController extends Controller
 
         $message = config('app.debug')
             ? $error->getMessage()
-            : 'Unable to save banner. Please make sure uploads/banners is writable and the selected image is valid.';
+            : 'Unable to save banner. Please make sure uploads/banners is writable and the selected media file is valid.';
 
         return response()->json([
             'message' => $message,
@@ -277,7 +308,7 @@ class BannerController extends Controller
         return filter_var(env('BANNER_CONVERT_WEBP', false), FILTER_VALIDATE_BOOLEAN);
     }
 
-    private function isUsableImageFile(string $path): bool
+    private function isUsableBannerMediaFile(string $path): bool
     {
         clearstatcache(true, $path);
 
@@ -289,7 +320,26 @@ class BannerController extends Controller
             return true;
         }
 
-        return strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'webp';
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['webp', 'mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'], true);
+    }
+
+    private function isVideoUpload(UploadedFile $file): bool
+    {
+        $mimeType = (string) $file->getMimeType();
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: '');
+
+        return str_starts_with($mimeType, 'video/')
+            || in_array($extension, ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'], true);
+    }
+
+    private function isAnimationUpload(UploadedFile $file): bool
+    {
+        $mimeType = (string) $file->getMimeType();
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: '');
+
+        return $mimeType === 'image/gif' || $extension === 'gif';
     }
 
     private function ensureBannerUploadDirectory(): string

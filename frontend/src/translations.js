@@ -1767,19 +1767,55 @@ const translations = {
     },
     image: {
       kh: 'រូបភាព',
-      en: 'Image',
+      en: 'Banner media',
     },
     chooseImage: {
       kh: 'ជ្រើសរើលរូបភាព',
-      en: 'Choose Image',
+      en: 'Choose Media',
     },
     changeImage: {
       kh: 'ប្តូររូបភាព',
-      en: 'Change Image',
+      en: 'Change Media',
     },
     imageHelp: {
       kh: 'ជ្រើសរើស JPG, PNG, WebP, GIF, BMP ឬ AVIF។ ប្រព័ន្ធនឹងបម្លែងទៅជា WebP ដោយស្វ័យប្រវត្តិ។',
-      en: 'Choose JPG, PNG, WebP, GIF, BMP, or AVIF. The system will convert it to WebP automatically.',
+      en: 'Supports JPG, PNG, WebP, GIF, BMP, AVIF, MP4, WebM, OGG, and MOV. GIF and video keep animation.',
+    },
+    mediaHelp: {
+      kh: 'គាំទ្រ JPG, PNG, WebP, GIF, BMP, AVIF, MP4, WebM, OGG, MOV។ GIF និង Video នឹងរក្សាចលនា។',
+      en: 'Supports JPG, PNG, WebP, GIF, BMP, AVIF, MP4, WebM, OGG, and MOV. GIF and video keep animation.',
+    },
+    media: {
+      kh: 'មេឌៀ Banner',
+      en: 'Banner media',
+    },
+    chooseMedia: {
+      kh: 'ជ្រើសរើស មេឌៀ',
+      en: 'Choose Media',
+    },
+    changeMedia: {
+      kh: 'ប្តូរ មេឌៀ',
+      en: 'Change Media',
+    },
+    mediaTypeInvalid: {
+      kh: 'សូមជ្រើសរើស file ប្រភេទ image, GIF ឬ video។',
+      en: 'Please choose an image, GIF, or video file.',
+    },
+    displayPages: {
+      kh: 'បង្ហាញនៅទំព័រ',
+      en: 'Display on pages',
+    },
+    homePage: {
+      kh: 'ទំព័រដើម',
+      en: 'Home page',
+    },
+    aboutPage: {
+      kh: 'ទំព័រអំពី',
+      en: 'About page',
+    },
+    pageTargetRequired: {
+      kh: 'សូមជ្រើសរើសយ៉ាងហោចណាស់មួយទំព័រ។',
+      en: 'Please choose at least one page.',
     },
     active: {
       kh: 'សកម្ម',

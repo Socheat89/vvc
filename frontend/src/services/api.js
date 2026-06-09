@@ -164,6 +164,7 @@ export const userService = {
 
 export const bannerService = {
   getAll: () => api.get('/banners'),
+  getForPlacement: (placement) => api.get('/banners', { params: { placement } }),
   getById: (id) => api.get(`/banners/${id}`),
   adminGetAll: () => api.get('/banners/admin/all'),
   create: (data) => api.post('/banners', data),

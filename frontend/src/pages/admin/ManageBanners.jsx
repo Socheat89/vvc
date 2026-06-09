@@ -8,32 +8,57 @@ const emptyForm = {
   tone: 'gold',
   image: '',
   imageFile: null,
+  show_on_home: true,
+  show_on_about: false,
 };
 
+const ACCEPTED_BANNER_MEDIA = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif,video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v';
+const ACCEPTED_BANNER_MEDIA_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif', 'mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v']);
 const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
-const BANNER_UPLOAD_BASE = `${PUBLIC_ASSET_BASE}/uploads/banners`;
+const VIDEO_MEDIA_EXTENSIONS = new Set(['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v']);
 
-const getBannerImageUrl = (image) => {
-  if (!image) return '';
-  const rawImage = String(image).trim().replace(/\\/g, '/');
-  if (!rawImage) return '';
-  if (/^(data:|blob:)/i.test(rawImage)) return rawImage;
+const extractUploadPath = (value) => {
+  const normalizedValue = String(value || '').trim().replace(/\\/g, '/');
+  const uploadIndex = normalizedValue.toLowerCase().indexOf('uploads/');
 
-  const uploadIndex = rawImage.toLowerCase().indexOf('uploads/');
-  if (uploadIndex >= 0) {
-    return `${PUBLIC_ASSET_BASE}/${rawImage.slice(uploadIndex).replace(/^\/+/, '')}`;
-  }
+  if (uploadIndex < 0) return '';
 
-  if (/^https?:\/\//i.test(rawImage)) {
-    return rawImage;
-  }
+  return normalizedValue.slice(uploadIndex).replace(/^\/+/, '');
+};
 
-  const imagePath = rawImage
+const getBannerMediaUrl = (media) => {
+  if (!media) return '';
+  const rawMedia = String(media).trim().replace(/\\/g, '/');
+  if (!rawMedia) return '';
+  if (/^(data:|blob:)/i.test(rawMedia)) return rawMedia;
+
+  const uploadPath = extractUploadPath(rawMedia);
+  if (uploadPath) return `${PUBLIC_ASSET_BASE}/${uploadPath}`;
+
+  if (/^https?:\/\//i.test(rawMedia)) return rawMedia;
+
+  const mediaPath = rawMedia
     .replace(/^\/+/, '')
     .replace(/^public\//i, '')
-    .replace(/^backend\/public\//i, '');
+    .replace(/^backend\/public\//i, '')
+    .replace(/^uploads\//i, '');
 
-  return `${BANNER_UPLOAD_BASE}/${imagePath}`;
+  return `${PUBLIC_ASSET_BASE}/uploads/banners/${mediaPath}`;
+};
+
+const getMediaTypeFromUrl = (media) => {
+  if (!media) return 'image';
+
+  const rawMedia = String(media).trim().replace(/\\/g, '/');
+  if (/^data:video\//i.test(rawMedia)) return 'video';
+  if (/^data:image\//i.test(rawMedia)) return 'image';
+
+  const mediaPath = rawMedia.split(/[?#]/)[0];
+  const extension = mediaPath.includes('.')
+    ? mediaPath.split('.').pop().toLowerCase()
+    : '';
+
+  return VIDEO_MEDIA_EXTENSIONS.has(extension) ? 'video' : 'image';
 };
 
 const toneOptions = [
@@ -55,14 +80,56 @@ const getApiErrorMessage = (error, fallback) => {
   }
 
   if (error.response?.status === 500) {
-    return 'Server Error: banner image upload/update failed on the backend. Please deploy the BannerController fix and check uploads/banners permissions.';
+    return 'Server Error: banner media upload/update failed on the backend. Please deploy the BannerController fix and check uploads/banners permissions.';
   }
 
   return data?.message || error.message || fallback;
 };
 
-const convertImageFileToWebp = (file) => new Promise((resolve) => {
-  if (!file?.type?.startsWith('image/') || file.type === 'image/webp') {
+const getFileExtension = (file) => {
+  const name = file?.name || '';
+  return name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+};
+
+const getFileMediaType = (file) => (
+  file?.type?.startsWith('video/') || getMediaTypeFromUrl(file?.name) === 'video'
+    ? 'video'
+    : 'image'
+);
+
+const isAcceptedBannerMediaFile = (file) => {
+  if (!file) return false;
+  if (file.type?.startsWith('image/') || file.type?.startsWith('video/')) return true;
+
+  return ACCEPTED_BANNER_MEDIA_EXTENSIONS.has(getFileExtension(file));
+};
+
+const renderBannerMedia = (src, alt, className, mediaType = getMediaTypeFromUrl(src)) => {
+  if (!src) return null;
+
+  if (mediaType === 'video') {
+    return (
+      <video
+        src={src}
+        className={className}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+      />
+    );
+  }
+
+  return <img src={src} alt={alt} className={className} />;
+};
+
+const prepareBannerMediaFile = (file) => new Promise((resolve) => {
+  if (
+    !file?.type?.startsWith('image/')
+    || file.type === 'image/webp'
+    || file.type === 'image/gif'
+  ) {
     resolve(file);
     return;
   }
@@ -176,28 +243,34 @@ export default function ManageBanners() {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, type, checked, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const handleImageChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const uploadFile = await convertImageFileToWebp(file);
+      if (!isAcceptedBannerMediaFile(file)) {
+        setFormError(t.mediaTypeInvalid?.[language] || t.saveFailed[language]);
+        return;
+      }
+
+      const uploadFile = await prepareBannerMediaFile(file);
 
       setFormData((prev) => ({
         ...prev,
         imageFile: uploadFile,
       }));
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(uploadFile);
+
+      if (imagePreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      setImagePreview(URL.createObjectURL(uploadFile));
+      setFormError(null);
     }
   };
 
@@ -205,6 +278,8 @@ export default function ManageBanners() {
     const payload = {
       title: data.title.trim() || null,
       tone: data.tone,
+      show_on_home: Boolean(data.show_on_home),
+      show_on_about: Boolean(data.show_on_about),
     };
 
     if (!data.imageFile) {
@@ -214,7 +289,7 @@ export default function ManageBanners() {
     const formData = new FormData();
     Object.entries(payload).forEach(([key, value]) => {
       if (value !== undefined) {
-        formData.append(key, value === null ? '' : value);
+        formData.append(key, typeof value === 'boolean' ? (value ? '1' : '0') : (value === null ? '' : value));
       }
     });
 
@@ -227,6 +302,11 @@ export default function ManageBanners() {
     e.preventDefault();
     if (!formData.tone) {
       setFormError(t.toneRequired[language]);
+      return;
+    }
+
+    if (!formData.show_on_home && !formData.show_on_about) {
+      setFormError((t.pageTargetRequired || t.toneRequired)[language]);
       return;
     }
 
@@ -259,6 +339,8 @@ export default function ManageBanners() {
       tone: banner.tone,
       image: banner.image || '',
       imageFile: null,
+      show_on_home: banner.show_on_home !== false,
+      show_on_about: banner.show_on_about === true,
     });
     setImagePreview(null);
     setShowForm(true);
@@ -280,6 +362,10 @@ export default function ManageBanners() {
   };
 
   const resetForm = () => {
+    if (imagePreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
     setShowForm(false);
     setEditingId(null);
     setFormData(emptyForm);
@@ -375,15 +461,45 @@ export default function ManageBanners() {
                 </select>
               </div>
 
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-white/80 p-4">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">
+                  {(t.displayPages || t.tone)[language]}
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-700 transition hover:border-[var(--gold)] hover:bg-[var(--gold-soft)]">
+                    <input
+                      type="checkbox"
+                      name="show_on_home"
+                      checked={formData.show_on_home}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 rounded border-slate-300 text-[var(--gold)] focus:ring-[var(--gold)]"
+                    />
+                    {(t.homePage || t.active)[language]}
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-700 transition hover:border-[var(--gold)] hover:bg-[var(--gold-soft)]">
+                    <input
+                      type="checkbox"
+                      name="show_on_about"
+                      checked={formData.show_on_about}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 rounded border-slate-300 text-[var(--gold)] focus:ring-[var(--gold)]"
+                    />
+                    {(t.aboutPage || t.active)[language]}
+                  </label>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">{t.image[language]}</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">
+                  {(t.media || t.image)[language]}
+                </label>
                 <div className="flex gap-4 items-center">
                   <div className="flex-1">
                     <input
                       type="file"
                       ref={fileInputRef}
                       onChange={handleImageChange}
-                      accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif"
+                      accept={ACCEPTED_BANNER_MEDIA}
                       className="hidden"
                     />
                     <button
@@ -391,16 +507,26 @@ export default function ManageBanners() {
                       onClick={() => fileInputRef.current?.click()}
                       className="w-full rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:border-[var(--gold)] hover:bg-[var(--gold-soft)]"
                     >
-                      {imagePreview ? t.changeImage[language] : t.chooseImage[language]}
+                      {imagePreview
+                        ? (t.changeMedia || t.changeImage)[language]
+                        : (t.chooseMedia || t.chooseImage)[language]}
                     </button>
                   </div>
                   
                   {imagePreview && (
                     <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm flex-shrink-0 group">
-                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      {renderBannerMedia(
+                        imagePreview,
+                        'Preview',
+                        'w-full h-full object-cover',
+                        getFileMediaType(formData.imageFile)
+                      )}
                       <button
                         type="button"
                         onClick={() => {
+                          if (imagePreview?.startsWith('blob:')) {
+                            URL.revokeObjectURL(imagePreview);
+                          }
                           setImagePreview(null);
                           setFormData((prev) => ({ ...prev, imageFile: null }));
                           if (fileInputRef.current) fileInputRef.current.value = '';
@@ -412,7 +538,9 @@ export default function ManageBanners() {
                     </div>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-400 mt-2">{t.imageHelp[language]}</p>
+                <p className="text-[10px] text-slate-400 mt-2">
+                  {(t.mediaHelp || t.imageHelp)[language]}
+                </p>
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-slate-200/50 justify-end">
@@ -481,6 +609,8 @@ export default function ManageBanners() {
         <div className="space-y-4">
           {banners.map((banner) => {
             const toneValue = banner.tone;
+            const bannerMediaUrl = getBannerMediaUrl(banner.image);
+            const bannerMediaType = getMediaTypeFromUrl(bannerMediaUrl);
             let toneTagClass = 'bg-slate-50 text-slate-600 border-slate-200';
             if (toneValue === 'gold') toneTagClass = 'bg-[var(--gold-soft)] text-[var(--gold-deep)] border-[var(--gold)]/20';
             else if (toneValue === 'paper') toneTagClass = 'bg-[#fcf9f2] text-slate-700 border-slate-200';
@@ -491,9 +621,14 @@ export default function ManageBanners() {
                 key={banner.id}
                 className="glass-card rounded-2xl p-5 flex items-center gap-5 group hover:shadow-md transition bg-white/70"
               >
-                {banner.image && (
+                {bannerMediaUrl && (
                   <div className="h-16 w-28 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-100 shadow-sm group-hover:scale-[1.02] transition duration-200">
-                    <img src={getBannerImageUrl(banner.image)} alt={banner.title} className="h-full w-full object-cover" />
+                    {renderBannerMedia(
+                      bannerMediaUrl,
+                      banner.title || t.untitled[language],
+                      'h-full w-full object-cover',
+                      bannerMediaType
+                    )}
                   </div>
                 )}
                 
@@ -510,6 +645,16 @@ export default function ManageBanners() {
                     }`}>
                       {banner.active ? t.active[language] : t.inactive[language]}
                     </span>
+                    {banner.show_on_home !== false && (
+                      <span className="inline-flex rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700">
+                        {(t.homePage || t.active)[language]}
+                      </span>
+                    )}
+                    {banner.show_on_about === true && (
+                      <span className="inline-flex rounded-lg border border-violet-100 bg-violet-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-700">
+                        {(t.aboutPage || t.active)[language]}
+                      </span>
+                    )}
                   </div>
                 </div>
 
