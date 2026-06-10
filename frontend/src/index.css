@@ -279,13 +279,9 @@
 		position: absolute;
 		inset: 0;
 		background:
-			linear-gradient(115deg, transparent 0 56%, rgba(255, 255, 255, 0.12) 56% 68%, transparent 68%),
-			repeating-linear-gradient(90deg, rgba(17, 24, 39, 0.012) 0 1px, transparent 1px 84px);
+			linear-gradient(115deg, transparent 0 56%, rgba(255, 255, 255, 0.28) 56% 68%, transparent 68%),
+			repeating-linear-gradient(90deg, rgba(17, 24, 39, 0.025) 0 1px, transparent 1px 84px);
 		pointer-events: none;
-	}
-
-	.home-poster-slide-has-image::after {
-		opacity: 0.12;
 	}
 
 	.home-poster-slide-paper {
@@ -481,7 +477,6 @@
 		min-height: 0;
 		object-fit: contain;
 		object-position: center center;
-		filter: brightness(1.32) contrast(1.22) saturate(1.16);
 	}
 
 	.home-showcase {
@@ -1849,16 +1844,15 @@
 		bottom: 0;
 		left: 0;
 		z-index: 5;
-		height: clamp(68px, 7vw, 120px);
+		height: clamp(160px, 16vw, 280px);
 		margin-top: 0;
-		opacity: 0.42;
-		background: linear-gradient(180deg, transparent 0 58%, rgba(255, 250, 240, 0.02) 78%, rgba(255, 250, 240, 0.2) 100%);
+		background: linear-gradient(180deg, transparent 0 18%, rgba(255, 250, 240, 0.08) 52%, rgba(255, 250, 240, 0.74) 100%);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave::after {
 		display: block;
-		height: 12%;
-		background: linear-gradient(180deg, rgba(255, 250, 240, 0), rgba(255, 255, 255, 0.22));
+		height: 28%;
+		background: linear-gradient(180deg, rgba(255, 250, 240, 0), rgba(255, 255, 255, 0.84));
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave {
@@ -1869,15 +1863,15 @@
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-back path {
-		fill: rgba(247, 222, 155, 0.18);
+		fill: rgba(247, 222, 155, 0.58);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-mid path {
-		fill: rgba(199, 154, 45, 0.07);
+		fill: rgba(199, 154, 45, 0.28);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-front path {
-		fill: rgba(255, 250, 240, 0.36);
+		fill: rgba(255, 250, 240, 0.96);
 	}
 
 	.product-page {
@@ -3225,6 +3219,7 @@
 		height: 100%;
 		object-fit: cover;
 		object-position: center;
+		filter: brightness(1.28) contrast(1.18) saturate(1.14);
 	}
 
 	.about-hero-shade {
@@ -3232,8 +3227,8 @@
 		inset: 0;
 		z-index: 1;
 		background:
-			linear-gradient(90deg, rgba(8, 12, 22, 0.24) 0%, rgba(8, 12, 22, 0.1) 44%, rgba(8, 12, 22, 0.06) 100%),
-			linear-gradient(180deg, rgba(8, 12, 22, 0.02) 0%, rgba(8, 12, 22, 0.16) 64%, rgba(8, 12, 22, 0.28) 100%);
+			linear-gradient(90deg, rgba(8, 12, 22, 0.1) 0%, rgba(8, 12, 22, 0.04) 44%, rgba(8, 12, 22, 0.02) 100%),
+			linear-gradient(180deg, rgba(8, 12, 22, 0) 0%, rgba(8, 12, 22, 0.08) 64%, rgba(8, 12, 22, 0.14) 100%);
 	}
 
 	.about-hero-content {
@@ -4571,7 +4566,7 @@
 	}
 
 	.home-poster-slide-has-image .home-poster-wave {
-		height: clamp(42px, 11vw, 76px);
+		height: clamp(98px, 26vw, 160px);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave {
@@ -4877,8 +4872,8 @@
 
 	.about-hero-shade {
 		background:
-			linear-gradient(180deg, rgba(8, 12, 22, 0.04) 0%, rgba(8, 12, 22, 0.14) 54%, rgba(8, 12, 22, 0.3) 100%),
-			linear-gradient(90deg, rgba(8, 12, 22, 0.22), rgba(8, 12, 22, 0.06));
+			linear-gradient(180deg, rgba(8, 12, 22, 0.01) 0%, rgba(8, 12, 22, 0.08) 54%, rgba(8, 12, 22, 0.16) 100%),
+			linear-gradient(90deg, rgba(8, 12, 22, 0.1), rgba(8, 12, 22, 0.02));
 	}
 
 	.about-hero-content {
