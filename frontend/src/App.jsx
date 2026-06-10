@@ -21,11 +21,13 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
 import { SiteSettingsProvider } from './context/SiteSettingsContext';
 
+const routerBasename = import.meta.env.VITE_ROUTER_BASENAME || '/';
+
 export default function App() {
   return (
     <LanguageProvider>
       <SiteSettingsProvider>
-        <Router basename={import.meta.env.BASE_URL}>
+        <Router basename={routerBasename}>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<PublicLayout />}>

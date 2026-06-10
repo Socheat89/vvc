@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const PRODUCTION_API_URL = 'https://vvc.asia/backend/public/index.php/api';
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : PRODUCTION_API_URL);
-const APP_BASE_URL = import.meta.env.BASE_URL || '/';
+const APP_BASE_URL = import.meta.env.VITE_ROUTER_BASENAME || '/';
 const getAppPath = (path) => `${APP_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 
 const api = axios.create({
