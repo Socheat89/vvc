@@ -3800,6 +3800,16 @@
 		font-weight: 800;
 	}
 
+	.public-language-icon {
+		display: block;
+		width: 18px;
+		height: 18px;
+		flex: 0 0 auto;
+		border-radius: 999px;
+		object-fit: cover;
+		box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+	}
+
 	.public-nav-link.active {
 		background: var(--gold);
 		color: #fff;
@@ -4325,6 +4335,11 @@
 
 	.public-header .btn-primary {
 		display: none;
+	}
+
+	.public-mobile-action .public-language-icon {
+		width: 16px;
+		height: 16px;
 	}
 
 	.public-header ~ main {

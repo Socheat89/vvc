@@ -8,6 +8,11 @@ import translations from '../translations';
 const getTranslation = (entry, language, fallback) =>
   entry?.[language] ?? entry?.kh ?? entry?.en ?? fallback;
 
+const languageIconUrls = {
+  kh: 'https://cdn-icons-png.flaticon.com/512/16022/16022033.png',
+  en: 'https://cdn-icons-png.flaticon.com/512/197/197374.png',
+};
+
 export default function Header() {
   const { language, toggleLanguage } = useLanguage();
   const { displayName, logoUrl } = useSiteSettings();
@@ -16,6 +21,8 @@ export default function Header() {
   const commonText = t.common || {};
   const brandLogo = logoUrl || logo;
   const brandName = displayName || 'Van Van Cambodia';
+  const nextLanguage = language === 'kh' ? 'en' : 'kh';
+  const languageIconUrl = languageIconUrls[nextLanguage];
   const desktopNavItems = [
     { to: '/', label: getTranslation(headerText.home, language, 'Home'), end: true },
     { to: '/products', label: getTranslation(headerText.products, language, 'Products') },
@@ -83,12 +90,7 @@ export default function Header() {
             title={language === 'kh' ? 'Switch to English' : 'ប្តូរទៅភាសាខ្មែរ'}
             className="public-language-toggle flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-[var(--ink)]"
           >
-            {/* Globe Icon */}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
+            <img src={languageIconUrl} alt="" aria-hidden="true" className="public-language-icon" decoding="async" />
             {getTranslation(commonText.languageToggle, language, language === 'kh' ? 'EN' : 'ខ្មែរ')}
           </button>
         </div>
@@ -99,11 +101,7 @@ export default function Header() {
             onClick={toggleLanguage}
             className="public-mobile-action flex items-center gap-1 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-[var(--ink)]"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
+            <img src={languageIconUrl} alt="" aria-hidden="true" className="public-language-icon" decoding="async" />
             {getTranslation(commonText.languageToggle, language, language === 'kh' ? 'EN' : 'ខ្មែរ')}
           </button>
           <Link to="/products" className="public-mobile-action btn-primary text-sm">
