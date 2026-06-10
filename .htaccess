@@ -1,10 +1,9 @@
-DirectoryIndex frontend/dist/index.html
-
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
   RewriteRule ^frontend/dist/?$ / [R=302,L]
   RewriteRule ^frontend/dist/index\.html$ / [R=302,L]
+  RewriteRule ^$ frontend/dist/index.html [L]
 
   RewriteCond %{REQUEST_URI} !^/backend/
   RewriteCond %{REQUEST_FILENAME} !-f
