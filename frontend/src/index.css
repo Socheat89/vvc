@@ -285,7 +285,7 @@
 	}
 
 	.home-poster-slide-has-image::after {
-		opacity: 0.35;
+		opacity: 0.12;
 	}
 
 	.home-poster-slide-paper {
@@ -481,7 +481,7 @@
 		min-height: 0;
 		object-fit: contain;
 		object-position: center center;
-		filter: brightness(1.12) contrast(1.1) saturate(1.06);
+		filter: brightness(1.32) contrast(1.22) saturate(1.16);
 	}
 
 	.home-showcase {
@@ -1849,15 +1849,16 @@
 		bottom: 0;
 		left: 0;
 		z-index: 5;
-		height: clamp(110px, 11vw, 190px);
+		height: clamp(68px, 7vw, 120px);
 		margin-top: 0;
-		background: linear-gradient(180deg, transparent 0 34%, rgba(255, 250, 240, 0.04) 64%, rgba(255, 250, 240, 0.38) 100%);
+		opacity: 0.42;
+		background: linear-gradient(180deg, transparent 0 58%, rgba(255, 250, 240, 0.02) 78%, rgba(255, 250, 240, 0.2) 100%);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave::after {
 		display: block;
-		height: 20%;
-		background: linear-gradient(180deg, rgba(255, 250, 240, 0), rgba(255, 255, 255, 0.48));
+		height: 12%;
+		background: linear-gradient(180deg, rgba(255, 250, 240, 0), rgba(255, 255, 255, 0.22));
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave {
@@ -1868,15 +1869,15 @@
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-back path {
-		fill: rgba(247, 222, 155, 0.3);
+		fill: rgba(247, 222, 155, 0.18);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-mid path {
-		fill: rgba(199, 154, 45, 0.12);
+		fill: rgba(199, 154, 45, 0.07);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-front path {
-		fill: rgba(255, 250, 240, 0.68);
+		fill: rgba(255, 250, 240, 0.36);
 	}
 
 	.product-page {
@@ -4570,7 +4571,7 @@
 	}
 
 	.home-poster-slide-has-image .home-poster-wave {
-		height: clamp(70px, 18vw, 120px);
+		height: clamp(42px, 11vw, 76px);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave {
