@@ -279,9 +279,13 @@
 		position: absolute;
 		inset: 0;
 		background:
-			linear-gradient(115deg, transparent 0 56%, rgba(255, 255, 255, 0.28) 56% 68%, transparent 68%),
-			repeating-linear-gradient(90deg, rgba(17, 24, 39, 0.025) 0 1px, transparent 1px 84px);
+			linear-gradient(115deg, transparent 0 56%, rgba(255, 255, 255, 0.12) 56% 68%, transparent 68%),
+			repeating-linear-gradient(90deg, rgba(17, 24, 39, 0.012) 0 1px, transparent 1px 84px);
 		pointer-events: none;
+	}
+
+	.home-poster-slide-has-image::after {
+		opacity: 0.35;
 	}
 
 	.home-poster-slide-paper {
@@ -477,6 +481,7 @@
 		min-height: 0;
 		object-fit: contain;
 		object-position: center center;
+		filter: brightness(1.12) contrast(1.1) saturate(1.06);
 	}
 
 	.home-showcase {
@@ -1844,15 +1849,15 @@
 		bottom: 0;
 		left: 0;
 		z-index: 5;
-		height: clamp(160px, 16vw, 280px);
+		height: clamp(110px, 11vw, 190px);
 		margin-top: 0;
-		background: linear-gradient(180deg, transparent 0 18%, rgba(255, 250, 240, 0.08) 52%, rgba(255, 250, 240, 0.74) 100%);
+		background: linear-gradient(180deg, transparent 0 34%, rgba(255, 250, 240, 0.04) 64%, rgba(255, 250, 240, 0.38) 100%);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave::after {
 		display: block;
-		height: 28%;
-		background: linear-gradient(180deg, rgba(255, 250, 240, 0), rgba(255, 255, 255, 0.84));
+		height: 20%;
+		background: linear-gradient(180deg, rgba(255, 250, 240, 0), rgba(255, 255, 255, 0.48));
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave {
@@ -1863,15 +1868,15 @@
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-back path {
-		fill: rgba(247, 222, 155, 0.58);
+		fill: rgba(247, 222, 155, 0.3);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-mid path {
-		fill: rgba(199, 154, 45, 0.28);
+		fill: rgba(199, 154, 45, 0.12);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave-front path {
-		fill: rgba(255, 250, 240, 0.96);
+		fill: rgba(255, 250, 240, 0.68);
 	}
 
 	.product-page {
@@ -4565,7 +4570,7 @@
 	}
 
 	.home-poster-slide-has-image .home-poster-wave {
-		height: clamp(98px, 26vw, 160px);
+		height: clamp(70px, 18vw, 120px);
 	}
 
 	.home-poster-slide-has-image .home-poster-wave .home-wave {
