@@ -2,6 +2,8 @@ import axios from 'axios';
 
 const PRODUCTION_API_URL = 'https://vvc.asia/backend/public/index.php/api';
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : PRODUCTION_API_URL);
+const APP_BASE_URL = import.meta.env.BASE_URL || '/';
+const getAppPath = (path) => `${APP_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 
 const api = axios.create({
   baseURL: API_URL,
@@ -36,7 +38,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('admin_user');
-      window.location.href = '/admin/login';
+      window.location.href = getAppPath('/admin/login');
     }
     return Promise.reject(error);
   }
@@ -77,7 +79,7 @@ export const productService = {
       if (response.status === 401) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('admin_user');
-        window.location.href = '/admin/login';
+        window.location.href = getAppPath('/admin/login');
       }
 
       if (!response.ok) {
@@ -130,7 +132,7 @@ export const categoryService = {
     if (response.status === 401) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('admin_user');
-      window.location.href = '/admin/login';
+      window.location.href = getAppPath('/admin/login');
     }
 
     if (!response.ok) {

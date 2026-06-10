@@ -1,9 +1,8 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /vvc_web/vvc/frontend/
+  RewriteBase /frontend/dist/
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-l
-  RewriteRule . /vvc_web/vvc/frontend/index.html [L]
+  RewriteRule . /frontend/dist/index.html [L]
 </IfModule>

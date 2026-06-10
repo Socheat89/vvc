@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  base: '/vvc_web/vvc/frontend/',
+  base: process.env.VITE_BASE_PATH || '/frontend/dist/',
   plugins: [react()],
   server: {
     port: 3000,
