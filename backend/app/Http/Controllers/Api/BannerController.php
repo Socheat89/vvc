@@ -13,6 +13,9 @@ use Illuminate\Validation\ValidationException;
 class BannerController extends Controller
 {
     private const BANNER_MEDIA_MIMES = 'jpg,jpeg,png,webp,gif,bmp,avif,mp4,webm,ogg,ogv,mov,m4v';
+    private const BANNER_IMAGE_MAX_WIDTH = 1920;
+    private const BANNER_IMAGE_MAX_HEIGHT = 1080;
+    private const BANNER_IMAGE_WEBP_QUALITY = 78;
 
     // GET /api/banners - Public
     public function index(Request $request)
@@ -220,7 +223,12 @@ class BannerController extends Controller
 
     private function convertImagePathToWebp(string $source, string $destination): bool
     {
-        if (!function_exists('imagewebp') || !is_readable($source)) {
+        if (
+            !function_exists('imagewebp')
+            || !function_exists('imagecreatetruecolor')
+            || !function_exists('imagecopyresampled')
+            || !is_readable($source)
+        ) {
             return false;
         }
 
@@ -269,8 +277,77 @@ class BannerController extends Controller
             @imagesavealpha($image, true);
         }
 
-        $saved = @imagewebp($image, $destination, 82);
-        imagedestroy($image);
+        $sourceWidth = imagesx($image);
+        $sourceHeight = imagesy($image);
+
+        if ($sourceWidth <= 0 || $sourceHeight <= 0) {
+            imagedestroy($image);
+            return false;
+        }
+
+        $scale = min(
+            1,
+            self::BANNER_IMAGE_MAX_WIDTH / $sourceWidth,
+            self::BANNER_IMAGE_MAX_HEIGHT / $sourceHeight
+        );
+        $targetWidth = max(1, (int) round($sourceWidth * $scale));
+        $targetHeight = max(1, (int) round($sourceHeight * $scale));
+        $outputImage = $image;
+
+        if ($targetWidth !== $sourceWidth || $targetHeight !== $sourceHeight) {
+            $resizedImage = imagecreatetruecolor($targetWidth, $targetHeight);
+
+            if (!$resizedImage) {
+                imagedestroy($image);
+                return false;
+            }
+
+            if (function_exists('imagealphablending')) {
+                @imagealphablending($resizedImage, false);
+            }
+
+            if (function_exists('imagesavealpha')) {
+                @imagesavealpha($resizedImage, true);
+            }
+
+            $transparent = imagecolorallocatealpha($resizedImage, 0, 0, 0, 127);
+            if ($transparent !== false) {
+                imagefilledrectangle($resizedImage, 0, 0, $targetWidth, $targetHeight, $transparent);
+            }
+
+            $resized = imagecopyresampled(
+                $resizedImage,
+                $image,
+                0,
+                0,
+                0,
+                0,
+                $targetWidth,
+                $targetHeight,
+                $sourceWidth,
+                $sourceHeight
+            );
+
+            imagedestroy($image);
+
+            if (!$resized) {
+                imagedestroy($resizedImage);
+                return false;
+            }
+
+            $outputImage = $resizedImage;
+        }
+
+        $saved = @imagewebp($outputImage, $destination, self::BANNER_IMAGE_WEBP_QUALITY);
+        imagedestroy($outputImage);
+
+        $sourceSize = (int) @filesize($source);
+        $destinationSize = (int) @filesize($destination);
+
+        if ($scale === 1 && $sourceSize > 0 && $destinationSize >= $sourceSize) {
+            @unlink($destination);
+            return false;
+        }
 
         if (!$saved || !$this->isUsableBannerMediaFile($destination)) {
             @unlink($destination);
@@ -305,7 +382,7 @@ class BannerController extends Controller
 
     private function shouldConvertBannerToWebp(): bool
     {
-        return filter_var(env('BANNER_CONVERT_WEBP', false), FILTER_VALIDATE_BOOLEAN);
+        return filter_var(env('BANNER_CONVERT_WEBP', true), FILTER_VALIDATE_BOOLEAN);
     }
 
     private function isUsableBannerMediaFile(string $path): bool

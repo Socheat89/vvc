@@ -16,6 +16,9 @@ const ACCEPTED_BANNER_MEDIA = 'image/jpeg,image/png,image/webp,image/gif,image/b
 const ACCEPTED_BANNER_MEDIA_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif', 'mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v']);
 const PUBLIC_ASSET_BASE = 'https://vvc.asia/backend/public';
 const VIDEO_MEDIA_EXTENSIONS = new Set(['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v']);
+const BANNER_IMAGE_MAX_WIDTH = 1920;
+const BANNER_IMAGE_MAX_HEIGHT = 1080;
+const BANNER_IMAGE_WEBP_QUALITY = 0.78;
 
 const extractUploadPath = (value) => {
   const normalizedValue = String(value || '').trim().replace(/\\/g, '/');
@@ -125,11 +128,16 @@ const renderBannerMedia = (src, alt, className, mediaType = getMediaTypeFromUrl(
 };
 
 const prepareBannerMediaFile = (file) => new Promise((resolve) => {
-  if (
-    !file?.type?.startsWith('image/')
-    || file.type === 'image/webp'
-    || file.type === 'image/gif'
-  ) {
+  if (!file) {
+    resolve(file);
+    return;
+  }
+
+  const fileExtension = getFileExtension(file);
+  const isImageFile = file?.type?.startsWith('image/') || getFileMediaType(file) === 'image';
+  const isAnimatedGif = file?.type === 'image/gif' || fileExtension === 'gif';
+
+  if (!isImageFile || isAnimatedGif) {
     resolve(file);
     return;
   }
@@ -138,9 +146,24 @@ const prepareBannerMediaFile = (file) => new Promise((resolve) => {
   const image = new Image();
 
   image.onload = () => {
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+    if (!sourceWidth || !sourceHeight) {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+      return;
+    }
+
+    const scale = Math.min(
+      1,
+      BANNER_IMAGE_MAX_WIDTH / sourceWidth,
+      BANNER_IMAGE_MAX_HEIGHT / sourceHeight
+    );
+    const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
+    const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
     const canvas = document.createElement('canvas');
-    canvas.width = image.naturalWidth || image.width;
-    canvas.height = image.naturalHeight || image.height;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
 
     const context = canvas.getContext('2d');
     if (!context || !canvas.width || !canvas.height) {
@@ -149,11 +172,18 @@ const prepareBannerMediaFile = (file) => new Promise((resolve) => {
       return;
     }
 
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
     canvas.toBlob((blob) => {
       URL.revokeObjectURL(objectUrl);
 
-      if (!blob || blob.size <= 0) {
+      if (!blob || blob.size <= 0 || blob.type !== 'image/webp') {
+        resolve(file);
+        return;
+      }
+
+      if (scale === 1 && file.size > 0 && blob.size >= file.size) {
         resolve(file);
         return;
       }
@@ -163,7 +193,7 @@ const prepareBannerMediaFile = (file) => new Promise((resolve) => {
         type: 'image/webp',
         lastModified: Date.now(),
       }));
-    }, 'image/webp', 0.86);
+    }, 'image/webp', BANNER_IMAGE_WEBP_QUALITY);
   };
 
   image.onerror = () => {
