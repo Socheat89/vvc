@@ -180,7 +180,7 @@ class BannerController extends Controller
         $directory = $this->ensureBannerUploadDirectory();
         $filename = 'banner-' . Str::uuid();
 
-        if (!$this->isVideoUpload($file) && !$this->isAnimationUpload($file) && $this->shouldConvertBannerToWebp()) {
+        if (!$this->isVideoUpload($file) && $this->shouldConvertBannerToWebp()) {
             $sourcePath = $file->getRealPath();
             $webpPath = $directory . DIRECTORY_SEPARATOR . $filename . '.webp';
 
@@ -409,14 +409,6 @@ class BannerController extends Controller
 
         return str_starts_with($mimeType, 'video/')
             || in_array($extension, ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'], true);
-    }
-
-    private function isAnimationUpload(UploadedFile $file): bool
-    {
-        $mimeType = (string) $file->getMimeType();
-        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: '');
-
-        return $mimeType === 'image/gif' || $extension === 'gif';
     }
 
     private function ensureBannerUploadDirectory(): string

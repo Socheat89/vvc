@@ -133,11 +133,9 @@ const prepareBannerMediaFile = (file) => new Promise((resolve) => {
     return;
   }
 
-  const fileExtension = getFileExtension(file);
   const isImageFile = file?.type?.startsWith('image/') || getFileMediaType(file) === 'image';
-  const isAnimatedGif = file?.type === 'image/gif' || fileExtension === 'gif';
 
-  if (!isImageFile || isAnimatedGif) {
+  if (!isImageFile) {
     resolve(file);
     return;
   }

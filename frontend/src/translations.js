@@ -1778,12 +1778,12 @@ const translations = {
       en: 'Change Media',
     },
     imageHelp: {
-      kh: 'ជ្រើសរើស JPG, PNG, WebP, GIF, BMP ឬ AVIF។ ប្រព័ន្ធនឹងបម្លែងទៅជា WebP ដោយស្វ័យប្រវត្តិ។',
-      en: 'Supports JPG, PNG, WebP, GIF, BMP, AVIF, MP4, WebM, OGG, and MOV. GIF and video keep animation.',
+      kh: 'ជ្រើសរើស JPG, PNG, WebP, GIF, BMP ឬ AVIF។ ប្រព័ន្ធនឹងបង្ហាប់ និងបម្លែងទៅជា WebP ដោយស្វ័យប្រវត្តិ។',
+      en: 'Supports JPG, PNG, WebP, GIF, BMP, and AVIF. Images and GIFs are compressed to WebP automatically.',
     },
     mediaHelp: {
-      kh: 'គាំទ្រ JPG, PNG, WebP, GIF, BMP, AVIF, MP4, WebM, OGG, MOV។ រូបភាពនឹងត្រូវបង្ហាប់ និងបម្លែងទៅជា WebP ដោយស្វ័យប្រវត្តិ។ GIF និង Video នឹងរក្សាចលនា។',
-      en: 'Supports JPG, PNG, WebP, GIF, BMP, AVIF, MP4, WebM, OGG, and MOV. Images are compressed to WebP automatically. GIF and video keep animation.',
+      kh: 'គាំទ្រ JPG, PNG, WebP, GIF, BMP, AVIF, MP4, WebM, OGG, MOV។ រូបភាព និង GIF នឹងត្រូវបង្ហាប់/បម្លែងទៅជា WebP ដោយស្វ័យប្រវត្តិ។ Video នឹងរក្សាចលនា។',
+      en: 'Supports JPG, PNG, WebP, GIF, BMP, AVIF, MP4, WebM, OGG, and MOV. Images and GIFs are compressed to WebP automatically. Video keeps motion.',
     },
     media: {
       kh: 'មេឌៀ Banner',
